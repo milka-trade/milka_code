@@ -29,7 +29,7 @@ def load_ohlcv(ticker):
     global df_tickers
     if ticker not in df_tickers:   # 티커가 캐시에 없으면 데이터 가져오기     
         try:
-            df_tickers[ticker] = pyupbit.get_ohlcv(ticker, interval="minute60", count=30) 
+            df_tickers[ticker] = pyupbit.get_ohlcv(ticker, interval="minute15", count=200) 
             if df_tickers[ticker] is None or df_tickers[ticker].empty:
                 print(f"load_ohlcv / No data returned for ticker: {ticker}")
                 send_discord_message(f"load_ohlcv / No data returned for ticker: {ticker}")
@@ -58,7 +58,7 @@ def get_balance(ticker):
 
 def get_ema(ticker, window):
     # df = load_ohlcv(ticker)
-    df = pyupbit.get_ohlcv(ticker, interval="minute60", count=200)
+    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200)
 
     if df is not None and not df.empty:
         return df['close'].ewm(span=window, adjust=False).mean()  # EMA 계산 후 마지막 값 반환
@@ -66,17 +66,6 @@ def get_ema(ticker, window):
     else:
         return 0  # 데이터가 없으면 0 반환
 
-def get_wma(ticker, window):
-    # df = load_ohlcv(ticker)
-    df = pyupbit.get_ohlcv(ticker, interval="minute60", count=200)
-
-    if df is not None and not df.empty:
-        # WMA 계산
-        weights = range(1, window + 1)
-        wma = df['close'].rolling(window=window).apply(lambda x: sum(weights * x) / sum(weights), raw=True)
-        return wma  # WMA의 마지막 값 반환
-    else:
-        return 0  # 데이터가 없으면 0 반환
 
 def get_best_k(ticker="KRW-BTC"):
     bestK = 0.5  # 초기 K 값
@@ -102,6 +91,16 @@ def get_best_k(ticker="KRW-BTC"):
             time.sleep(1)  # API 호출 제한을 위한 대기
 
     return bestK
+
+def get_rsi(ticker, period):
+    # df_rsi = pyupbit.get_ohlcv(ticker, interval="minute5", count=period)
+    df_rsi = load_ohlcv(ticker)
+    # df_rsi = pyupbit.get_ohlcv(ticker, interval="day", count=15)
+    delta = df_rsi['close'].diff(1)
+    gain = delta.where(delta > 0, 0).rolling(window=period).mean()
+    loss = -delta.where(delta < 0, 0).rolling(window=period).mean()
+    rs = gain / loss
+    return 100 - (100 / (1 + rs))
 
 def get_rsi_and_stoch_rsi(ticker, rsi_period, stoch_period):
 
@@ -225,8 +224,8 @@ def filtered_tickers(tickers, held_coins):
             last_ema200 = get_ema(t, 200).iloc[-1]    #200봉 지수이동평균 계산
             pre_ema200 = get_ema(t, 200).iloc[-2]
             
-            last_wma200 = get_wma(t, 195).iloc[-1]    #200봉 가중이동평균 계산
-            pre_wma200 = get_wma(t, 195).iloc[-2]
+            rsi = get_rsi(t, 14)
+            last_rsi = rsi.iloc[-1]
             
             stoch_rsi = get_rsi_and_stoch_rsi(t, 14, 14)   #스토캐스틱 RSI 계산
             if stoch_rsi.empty or len(stoch_rsi) < 2:
@@ -256,11 +255,14 @@ def filtered_tickers(tickers, held_coins):
                     # print(f"검증: [{t}\] pre_ema: {pre_ema200:,.2f} < last_ema: {last_ema200:,.2f} \n open_candle: {last_ha_open:,.2f} < close_candle: {last_ha_close:,.2f}")
                     if pre_ema200 < last_ema200 and last_ema200 < last_ha_open < last_ha_close:
                         
-                        # print(f"검증: [{t}] 0 < s_RSI:{last_stoch_rsi:,.2f} <= 0.25")
-                        if 0 < last_stoch_rsi <= 0.25 :
-                            print(f"cond2-5:  [{t}] 0 < [s_RSI]:{last_stoch_rsi:,.2f} <= 0.25")
+                        if 0 < last_rsi < 30 :
+                            print(f"cond2: [{t}] 0< RSI:{last_rsi:,.2f} < 30")    
+                            
+                            # print(f"검증: [{t}] 0 < s_RSI:{last_stoch_rsi:,.2f} <= 0.25")
+                            if 0 < last_stoch_rsi <= 0.2:
+                                print(f"cond2-5:  [{t}] 0 < [s_RSI]:{last_stoch_rsi:,.2f} <= 0.20")
 
-                            if cur_price < day_open_price_1 * 1.05:
+                                # if cur_price < day_open_price_1 * 1.9:
                                 filtered_tickers.append(t)
             
         except Exception as e:
@@ -379,23 +381,23 @@ def trade_sell(ticker):
     stoch_rsi = get_rsi_and_stoch_rsi(ticker, 14, 14)   #스토캐스틱 RSI 계산
     last_stoch_rsi = stoch_rsi.iloc[-1]
 
-    if profit_rate >= 0.4:  
+    if profit_rate >= 0.5:  
         while attempts < max_attempts:
             current_price = pyupbit.get_current_price(ticker)  # 현재 가격 재조회
             profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
                 
-            print(f"{ticker} / 시도 {attempts + 1} / {max_attempts} - / 현재가 {current_price} 수익률 {profit_rate:.2f}% / s_RSI: {last_stoch_rsi:,.2f}")
+            print(f"{ticker} / 시도 {attempts + 1} / {max_attempts} - / 현재가 {current_price} 수익률 {profit_rate:.2f}% ")
                 
-            if profit_rate >= 1.0:
+            if profit_rate >= 1.2:
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
-                send_discord_message(f"매도: {ticker}/ 현재가: {current_price}/ 수익률: {profit_rate:.2f}%")
+                send_discord_message(f"매도: {ticker}/ 현재가: {current_price}/ 수익률: {profit_rate:.2f}/ 시도 {attempts + 1} / {max_attempts} / s_RSI: {last_stoch_rsi:,.2f}%")
                 return sell_order
 
             else:
-                time.sleep(2)  # 짧은 대기                
+                time.sleep(1)  # 짧은 대기                
             attempts += 1  # 조회 횟수 증가
             
-        if profit_rate >= 0.3 :
+        if profit_rate >= 0.5 :
             sell_order = upbit.sell_market_order(ticker, buyed_amount)
             send_discord_message(f"최종 매도: {ticker}/ 현재가: {current_price}/ 수익률: {profit_rate:.2f}% / s_RSI: {last_stoch_rsi:,.2f}")
             return sell_order   
@@ -473,7 +475,7 @@ def buying_logic():
             restricted_end = stopbuy_time.replace(hour=restricted_end_hour, minute=restricted_end_minute, second=0, microsecond=0)
 
             if restricted_start <= stopbuy_time <= restricted_end:  # 매수 제한 시간 체크
-                time.sleep(600) 
+                time.sleep(300) 
                 continue
 
             else:  # 매수 금지 시간이 아닐 때
@@ -486,14 +488,14 @@ def buying_logic():
                         # send_discord_message(f"선정코인 : {best_ticker} / k값 : {best_k:,.2f} / 수익률 : {interest:,.2f}")
                         result = trade_buy(best_ticker, best_k)
                         if result:  # 매수 성공 여부 확인
-                            time.sleep(120)
+                            time.sleep(60)
                         else:
                             return None
                     else:
-                        time.sleep(300)
+                        time.sleep(60)
 
                 else:
-                    time.sleep(300)
+                    time.sleep(60)
 
         except Exception as e:
             print(f"buying_logic / 에러 발생: {e}")

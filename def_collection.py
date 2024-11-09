@@ -65,6 +65,18 @@
 #     else:
 #         return 0  # 데이터가 없으면 0 반환
     
+
+# def get_wma(ticker, window):
+#     # df = load_ohlcv(ticker)
+#     df = pyupbit.get_ohlcv(ticker, interval="minute60", count=200)
+
+#     if df is not None and not df.empty:
+#         # WMA 계산
+#         weights = range(1, window + 1)
+#         wma = df['close'].rolling(window=window).apply(lambda x: sum(weights * x) / sum(weights), raw=True)
+#         return wma  # WMA의 마지막 값 반환
+#     else:
+#         return 0  # 데이터가 없으면 0 반환
     
 # def trade_sell(ticker):
 #     """주어진 티커에 대해 매도 실행 및 수익률 출력, 매도 시간 체크"""
