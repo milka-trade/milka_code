@@ -29,7 +29,7 @@ def load_ohlcv(ticker):
     global df_tickers
     if ticker not in df_tickers:   # 티커가 캐시에 없으면 데이터 가져오기     
         try:
-            df_tickers[ticker] = pyupbit.get_ohlcv(ticker, interval="minute60", count=200) 
+            df_tickers[ticker] = pyupbit.get_ohlcv(ticker, interval="minute60", count=30) 
             if df_tickers[ticker] is None or df_tickers[ticker].empty:
                 print(f"load_ohlcv / No data returned for ticker: {ticker}")
                 send_discord_message(f"load_ohlcv / No data returned for ticker: {ticker}")
@@ -56,29 +56,19 @@ def get_balance(ticker):
         return 0
     return 0
 
-# def get_current_price(ticker):
-#     """현재가를 조회합니다."""
-#     if not ticker.startswith("KRW-"):
-#         print(f"current_price/잘못된 티커 형식: {ticker}")
-#         send_discord_message(f"current_price/잘못된 티커 형식: {ticker}")
-#         return None
+def get_ema(ticker, window):
+    # df = load_ohlcv(ticker)
+    df = pyupbit.get_ohlcv(ticker, interval="minute60", count=200)
+
+    if df is not None and not df.empty:
+        return df['close'].ewm(span=window, adjust=False).mean()  # EMA 계산 후 마지막 값 반환
     
-#     try:
-#         orderbook = pyupbit.get_orderbook(ticker=ticker)
-#         if orderbook is None or "orderbook_units" not in orderbook or not orderbook["orderbook_units"]:
-#             raise ValueError(f"'{ticker}'에 대한 유효한 orderbook이 없습니다.")
-#         current_price = orderbook["orderbook_units"][0]["ask_price"]
-#         time.sleep(0.5)
-#         return current_price
-    
-#     except Exception as e:
-#         print(f"current_price/현재가 조회 오류 ({ticker}): {e}")
-#         send_discord_message(f"current_price/현재가 조회 오류 ({ticker}): {e}")
-#         time.sleep(1)
-#         return None
+    else:
+        return 0  # 데이터가 없으면 0 반환
 
 def get_wma(ticker, window):
-    df = load_ohlcv(ticker)
+    # df = load_ohlcv(ticker)
+    df = pyupbit.get_ohlcv(ticker, interval="minute60", count=200)
 
     if df is not None and not df.empty:
         # WMA 계산
@@ -91,8 +81,8 @@ def get_wma(ticker, window):
 def get_best_k(ticker="KRW-BTC"):
     bestK = 0.5  # 초기 K 값
     interest = 0  # 초기 수익률
-    # df = load_ohlcv(ticker)  # 데이터 로드
-    df = pyupbit.get_ohlcv(ticker, interval="minute60", count=30)
+    df = load_ohlcv(ticker)  # 데이터 로드
+    # df = pyupbit.get_ohlcv(ticker, interval="minute60", count=30)
 
     if df is None or df.empty:
         return bestK  # 데이터가 없으면 초기 K 반환
@@ -231,8 +221,8 @@ def filtered_tickers(tickers, held_coins):
             if ha_df.empty or 'HA_Close' not in ha_df.columns:
                 raise ValueError("ha_df:Heikin Ashi DataFrame is empty or HA_Close column is missing.")
             
-            # last_ema200 = get_ema(t, 200).iloc[-1]    #200봉 지수이동평균 계산
-            # pre_ema200 = get_ema(t, 200).iloc[-2]
+            last_ema200 = get_ema(t, 200).iloc[-1]    #200봉 지수이동평균 계산
+            pre_ema200 = get_ema(t, 200).iloc[-2]
             
             last_wma200 = get_wma(t, 195).iloc[-1]    #200봉 가중이동평균 계산
             pre_wma200 = get_wma(t, 195).iloc[-2]
@@ -262,12 +252,14 @@ def filtered_tickers(tickers, held_coins):
 
             if threshold_value < atr :  # Volatility check
                 
-                if pre_wma200 < last_wma200 and last_wma200 < last_ha_open < last_ha_close:
+                # print(f"검증: [{t}\] pre_ema: {pre_ema200:,.2f} < last_ema: {last_ema200:,.2f} \n open_candle: {last_ha_open:,.2f} < close_candle: {last_ha_close:,.2f}")
+                if pre_ema200 < last_ema200 and last_ema200 < last_ha_open < last_ha_close:
+                    
+                    # print(f"검증: [{t}] 0 < s_RSI:{last_stoch_rsi:,.2f} <= 0.25")
+                    if 0 < last_stoch_rsi <= 0.25 :
+                        print(f"cond2-5:  [{t}] 0 < [s_RSI]:{last_stoch_rsi:,.2f} <= 0.25")
 
-                    if 0 < last_stoch_rsi <= 0.2 :
-                        print(f"cond2-5: {t} 0 < Last_s_RSI:{last_stoch_rsi:,.2f} <= 0.2")
-
-                        if cur_price < day_open_price_1 * 1.07:
+                        if cur_price < day_open_price_1 * 1.05:
                             filtered_tickers.append(t)
             
         except Exception as e:
@@ -395,7 +387,7 @@ def trade_sell(ticker):
                 send_discord_message(f"매도: {ticker}/ 현재가: {current_price}/ 수익률: {profit_rate:.2f}%")
                 return sell_order
             else:
-                time.sleep(1)  # 짧은 대기                
+                time.sleep(0.5)  # 짧은 대기                
             attempts += 1  # 조회 횟수 증가
             
         last_stoch_rsi = stoch_rsi.iloc[-1]
