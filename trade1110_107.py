@@ -56,8 +56,8 @@ def get_balance(ticker):
     return 0
 
 def get_ema(ticker, window):
-    df = load_ohlcv(ticker)
-    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200)
+    # df = load_ohlcv(ticker)
+    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200)
 
     if df is not None and not df.empty:
         return df['close'].ewm(span=window, adjust=False).mean()  # EMA 계산 후 마지막 값 반환
@@ -65,8 +65,8 @@ def get_ema(ticker, window):
     else:
         return 0  # 데이터가 없으면 0 반환
 
-def get_best_k(ticker="KRW-BTC"):
-    bestK = 0.5  # 초기 K 값
+def get_best_k(ticker):
+    bestK = 0.1  # 초기 K 값
     interest = 0  # 초기 수익률
     df = load_ohlcv(ticker)  # 데이터 로드
     # df = pyupbit.get_ohlcv(ticker, interval="minute60", count=30)
@@ -90,31 +90,10 @@ def get_best_k(ticker="KRW-BTC"):
 
     return bestK
 
-def ta_stochastic(ticker, window=14):
-    # 데이터 가져오기
-    df = load_ohlcv(ticker)
-    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50) 
-    if df is None or df.empty:
-        return None  # 데이터가 없으면 None 반환
-
-    # Stochastic 계산
-    high = df['high'].rolling(window=window).max()  # 지정된 기간의 최고가
-    low = df['low'].rolling(window=window).min()    # 지정된 기간의 최저가
-    current_close = df['close']                     # 현재 종가
-
-    # Stochastic %K 계산
-    stoch_k = (current_close - low) / (high - low)
-    stoch_k = stoch_k.replace([np.inf, -np.inf], np.nan)  # 무한대를 np.nan으로 대체
-
-    # Stochastic %D 계산 (스무딩)
-    stoch_d = stoch_k.rolling(window=3).mean()  # %K의 3일 이동 평균
-
-    return stoch_k, stoch_d  # Stochastic %K와 %D 반환
-
 def get_ta_rsi(ticker, period):
     # 데이터 가져오기
     # df_rsi = load_ohlcv(ticker)
-    df_rsi = pyupbit.get_ohlcv(ticker, interval="minute15", count=50) 
+    df_rsi = pyupbit.get_ohlcv(ticker, interval="minute15", count=200) 
     if df_rsi is None or df_rsi.empty:
         return None  # 데이터가 없으면 None 반환
 
@@ -149,24 +128,9 @@ def ta_stochastic_rsi(ticker):
     # Stochastic RSI 값만 반환 
     return stoch_rsi if not stoch_rsi.empty else 0
 
-def calculate_macd(ticker):
-    # 데이터 가져오기
-    df = load_ohlcv(ticker)
-    if df is None or df.empty:
-        return None  # 데이터가 없으면 None 반환
-
-    # MACD 계산
-    macd = ta.trend.MACD(df['close'], window_slow=26, window_fast=12, window_sign=9)
-
-    # MACD 및 시그널선 계산
-    df['MACD'] = macd.macd()
-    df['Signal'] = macd.macd_signal()
-
-    return df[['MACD', 'Signal']]  # MACD와 시그널선 반환
-
 def calculate_ha_candles(ticker):
-    df = load_ohlcv(ticker)  # 데이터 로드
-    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50) 
+    # df = load_ohlcv(ticker)  # 데이터 로드
+    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200) 
     if df.empty:
         raise ValueError(f"No data found for ticker: {ticker}")
 
@@ -242,13 +206,13 @@ def filtered_tickers(tickers, held_coins):
             continue
 
         try:
-            df = load_ohlcv(t) 
-            if df is None or df.empty:
-                print(f"filtered_tickers/No data for ticker: {t}")
-                send_discord_message(f"filtered_tickers/No data for ticker: {t}")
-                continue
+            # df = load_ohlcv(t) 
+            # if df is None or df.empty:
+            #     print(f"filtered_tickers/No data for ticker: {t}")
+            #     send_discord_message(f"filtered_tickers/No data for ticker: {t}")
+            #     continue
 
-            df_day = pyupbit.get_ohlcv(t, interval="day", count=7)  
+            df_day = pyupbit.get_ohlcv(t, interval="day", count=3)  
             if df_day is None or df_day.empty or 'high' not in df_day or 'low' not in df_day or 'open' not in df_day:
                 continue  
             
@@ -289,49 +253,21 @@ def filtered_tickers(tickers, held_coins):
             last_ha_open = ha_df['HA_Open'].iloc[-1]
             # print(f"Last HA Close: {last_ha_close}")  # 마지막 HA_Close 값 출력
 
-            # MACD 계산
-            macd_df = calculate_macd(t)
-            # if macd_df is None:
-            # return None  # 데이터가 없으면 None 반환
-
-            # 마지막 두 값 비교
-            last_macd = macd_df['MACD'].iloc[-1]
-            last_signal = macd_df['Signal'].iloc[-1]
-            previous_macd = macd_df['MACD'].iloc[-2]
-            previous_signal = macd_df['Signal'].iloc[-2]
-
-            stoch_k, stoch_d = ta_stochastic(t)
-
-            # 스토캐스틱 매수전략 도입
-            latest_stoch_k = stoch_k.iloc[-1]
-            latest_stoch_d = stoch_d.iloc[-1]
-
             if day_value_1 > 10_000_000_000 :  
                 # print(f"cond1: {t} / [value] : {day_value_1:,.0f} > 10십억")
 
-                if threshold_value < atr :  # Volatility check
+                if threshold_value < atr :
                     
                     if pre_ema200 < last_ema200 and last_ema200 < last_ha_open < last_ha_close:
-                            
-                    # 스토캐스틱 매수신호 검증
-                    # print(f"[검증 1]: [{t}] stoch_d: {latest_stoch_d:,.2f} < stoch_k:{latest_stoch_k:,.2f} < 0.25")
-                    # if latest_stoch_k < 0.25 and latest_stoch_k > latest_stoch_d:
-                    #     print(f"[cond 1]: [{t}] stoch_d: {latest_stoch_d:,.2f} < stoch_k:{latest_stoch_k:,.2f} < 0.25")
                         
-                        if 0 < last_ta_srsi <= 0.3:
-                            print(f"[cond 2]: [{t}] 0 < s-RSI:{last_ta_srsi:,.2f} <= 0.3")
+                        if 0 < last_ta_srsi <= 0.25:
+                            # print(f"[cond 2]: [{t}] 0 < s-RSI:{last_ta_srsi:,.2f} <= 0.25")
+  
+                            if last_ta_rsi < 65 :
+                                print(f"[cond 3]: [{t}] RSI:{last_ta_rsi:,.2f} < 65")    
 
-                            # print(f"[검증 2.RSI]: [{t}] 0 < {last_ta_rsi:,.2f} < 60")    
-                            if last_ta_rsi < 70 :
-                                    print(f"[cond 3]: [{t}] RSI:{last_ta_rsi:,.2f} < 70")    
-
-                                # print(f"[cond 4]: [{t}] macd1:{previous_macd} < signal1:{previous_signal} / macd2:{last_macd} > signal2:{last_signal}")    
-                                # if last_macd > last_signal:
-                                #     print(f"[cond 4]: [{t}] macd1:{previous_macd:,.2f} < signal1:{previous_signal:,.2f} / macd2:{last_macd:,.2f} > signal2:{last_signal:,.2f}")    
-                                    # print(f"[cond 4]: [{t}] macd:{last_macd:,.2f} > signal:{last_signal:,.2f}")    
-
-                                    if cur_price < day_open_price_1 * 1.2:
-                                        filtered_tickers.append(t)
+                                if cur_price < day_open_price_1 * 1.2:
+                                    filtered_tickers.append(t)
             
         except Exception as e:
             send_discord_message(f"filtered_tickers/Error processing ticker {t}: {e}")
@@ -363,7 +299,7 @@ def get_best_ticker():
     for ticker in filtered_list:   # 조회할 코인 필터링
         k = get_best_k(ticker)
         # df = load_ohlcv(ticker)
-        df = pyupbit.get_ohlcv(ticker, interval="minute60", count=30) 
+        df = pyupbit.get_ohlcv(ticker, interval="minute15", count=10) 
         if df is None or df.empty:
             continue
     
@@ -383,7 +319,7 @@ def get_best_ticker():
     
 def get_target_price(ticker, k):  #변동성 돌파 전략 구현
     # df = load_ohlcv(ticker)
-    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=3) 
+    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=2) 
     if df is not None and not df.empty:
         return df['close'].iloc[-1] + (df['high'].iloc[-1] - df['low'].iloc[-1]) * k
     return 0
@@ -393,7 +329,7 @@ def trade_buy(ticker, k):
     krw = get_balance("KRW")
     buyed_amount = get_balance(ticker.split("-")[1]) 
     max_retries = 20  
-    buy_size = min(krw * 0.9995, 200_000)  
+    buy_size = min(krw * 0.9995, 215_000)  
     
     attempt = 0  # 시도 횟수 초기화
     target_price = None  # target_price 초기화
@@ -433,9 +369,7 @@ def trade_buy(ticker, k):
                     attempt += 1  # 시도 횟수 증가
                     time.sleep(60)
 
-        # 10회 시도 후 가격 범위에 도달하지 못한 경우
         print(f"20회 시도완료: {ticker}, 목표가 범위에 도달하지 못함")
-        # send_discord_message(f"20회 시도완료: {ticker}, 목표가 범위에 도달하지 못함")
         return "Price not in range after max attempts", None
             
 def trade_sell(ticker):
@@ -446,7 +380,7 @@ def trade_sell(ticker):
     current_price = pyupbit.get_current_price(ticker)
     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
     
-    max_attempts = 120  # 최대 조회 횟수
+    max_attempts = 60  # 최대 조회 횟수
     attempts = 0  # 현재 조회 횟수
 
     ta_rsi = get_ta_rsi(ticker, 14)
@@ -479,7 +413,7 @@ def trade_sell(ticker):
                 time.sleep(1)  # 짧은 대기                
             attempts += 1  # 조회 횟수 증가
             
-        if profit_rate >= 0.5 :
+        if profit_rate >= 0.6 :
             sell_order = upbit.sell_market_order(ticker, buyed_amount)
             send_discord_message(f"최종 매도: {ticker}/ 현재가: {current_price}/ 수익률: {profit_rate:.2f}% / s_RSI: {last_stoch_rsi:,.2f}")
             return sell_order   
@@ -511,7 +445,7 @@ def send_profit_report():
 
                 if buyed_amount > 0:
                     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
-                    report_message += f"OFFICE[{b['currency']}] 수익률 {profit_rate:.1f}% [RSI] {last_rsi:,.2f} [S_RSI] {last_stoch_rsi:.2f}\n"
+                    report_message += f"{b['currency']} 수익률 {profit_rate:.1f}% [RSI] {last_rsi:,.2f} [s_RSI] {last_stoch_rsi:.2f}\n"
 
             send_discord_message(report_message)  # 슬랙으로 보고서 전송
 
@@ -531,11 +465,9 @@ def selling_logic():
     while True:
         try:
             balances = upbit.get_balances()
-            # print(f"selling_logic/잔고체크 {balances}")
             for b in balances:
                 if b['currency'] not in ["KRW", "BTC", "ETH", "QI", "ONX", "ETHF", "ETHW", "PURSE"]:
                         ticker = f"KRW-{b['currency']}"
-                        # print(f"selling_logic/매도함수 {ticker}")
                         trade_sell(ticker)
                 time.sleep(1)
 
@@ -545,7 +477,7 @@ def selling_logic():
             time.sleep(5)
 
 def buying_logic():
-    # 매수 제한 시간 설정
+
     restricted_start_hour = 8
     restricted_start_minute = 30
     restricted_end_hour = 9
@@ -567,8 +499,8 @@ def buying_logic():
                     best_ticker, interest, best_k = get_best_ticker()
 
                     if best_ticker:
-                        print(f"선정코인 : {best_ticker} / k값 : {best_k:,.2f} / 수익률 : {interest:,.2f}")
-                        # send_discord_message(f"선정코인 : {best_ticker} / k값 : {best_k:,.2f} / 수익률 : {interest:,.2f}")
+                        # print(f"선정코인 : {best_ticker} / k값 : {best_k:,.2f} / 수익률 : {interest:,.2f}")
+                        send_discord_message(f"선정코인 : {best_ticker} / k값 : {best_k:,.2f} / 수익률 : {interest:,.2f}")
                         result = trade_buy(best_ticker, best_k)
                         if result:  # 매수 성공 여부 확인
                             time.sleep(60)
