@@ -261,7 +261,7 @@ def filtered_tickers(tickers, held_coins):
                     if pre_ema200 < last_ema200 and last_ema200 < last_ha_open < last_ha_close:
                         
                         if 0 < last_ta_srsi <= 0.25:
-                            # print(f"[cond 2]: [{t}] 0 < s-RSI:{last_ta_srsi:,.2f} <= 0.25")
+                            print(f"[cond 2]: [{t}] 0 < s-RSI:{last_ta_srsi:,.2f} <= 0.25")
   
                             if last_ta_rsi < 65 :
                                 print(f"[cond 3]: [{t}] RSI:{last_ta_rsi:,.2f} < 65")    
