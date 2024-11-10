@@ -28,7 +28,7 @@ def load_ohlcv(ticker):
     global df_tickers
     if ticker not in df_tickers:   # 티커가 캐시에 없으면 데이터 가져오기     
         try:
-            df_tickers[ticker] = pyupbit.get_ohlcv(ticker, interval="minute15", count=50) 
+            df_tickers[ticker] = pyupbit.get_ohlcv(ticker, interval="minute15", count=200) 
             if df_tickers[ticker] is None or df_tickers[ticker].empty:
                 print(f"load_ohlcv / No data returned for ticker: {ticker}")
                 send_discord_message(f"load_ohlcv / No data returned for ticker: {ticker}")
@@ -56,8 +56,8 @@ def get_balance(ticker):
     return 0
 
 def get_ema(ticker, window):
-    # df = load_ohlcv(ticker)
-    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200)
+    df = load_ohlcv(ticker)
+    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200)
 
     if df is not None and not df.empty:
         return df['close'].ewm(span=window, adjust=False).mean()  # EMA 계산 후 마지막 값 반환
@@ -93,6 +93,7 @@ def get_best_k(ticker="KRW-BTC"):
 def ta_stochastic(ticker, window=14):
     # 데이터 가져오기
     df = load_ohlcv(ticker)
+    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50) 
     if df is None or df.empty:
         return None  # 데이터가 없으면 None 반환
 
@@ -112,7 +113,8 @@ def ta_stochastic(ticker, window=14):
 
 def get_ta_rsi(ticker, period):
     # 데이터 가져오기
-    df_rsi = load_ohlcv(ticker)
+    # df_rsi = load_ohlcv(ticker)
+    df_rsi = pyupbit.get_ohlcv(ticker, interval="minute15", count=50) 
     if df_rsi is None or df_rsi.empty:
         return None  # 데이터가 없으면 None 반환
 
@@ -123,9 +125,11 @@ def get_ta_rsi(ticker, period):
 
 def ta_stochastic_rsi(ticker):
     # 데이터 가져오기
-    df = load_ohlcv(ticker)
+    # df = load_ohlcv(ticker)
+    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200) 
     if df is None or df.empty:
         return None  # 데이터가 없으면 None 반환
+    
     # RSI 계산
     rsi = ta.momentum.RSIIndicator(df['close'], window=14).rsi()
 
@@ -133,8 +137,14 @@ def ta_stochastic_rsi(ticker):
     min_rsi = rsi.rolling(window=14).min()
     max_rsi = rsi.rolling(window=14).max()
 
+    # NaN 제거
+    rsi = rsi.bfill()  # 이후 값으로 NaN 대체
+    min_rsi = min_rsi.bfill()
+    max_rsi = max_rsi.bfill()
+    
     stoch_rsi = (rsi - min_rsi) / (max_rsi - min_rsi)
     stoch_rsi = stoch_rsi.replace([np.inf, -np.inf], np.nan)  # 무한대를 np.nan으로 대체
+    stoch_rsi = stoch_rsi.fillna(0)  # NaN을 0으로 대체 (필요 시)
 
     # Stochastic RSI 값만 반환 
     return stoch_rsi if not stoch_rsi.empty else 0
@@ -156,6 +166,7 @@ def calculate_macd(ticker):
 
 def calculate_ha_candles(ticker):
     df = load_ohlcv(ticker)  # 데이터 로드
+    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50) 
     if df.empty:
         raise ValueError(f"No data found for ticker: {ticker}")
 
@@ -372,7 +383,7 @@ def get_best_ticker():
     
 def get_target_price(ticker, k):  #변동성 돌파 전략 구현
     # df = load_ohlcv(ticker)
-    df = pyupbit.get_ohlcv(ticker, interval="minute60", count=3) 
+    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=3) 
     if df is not None and not df.empty:
         return df['close'].iloc[-1] + (df['high'].iloc[-1] - df['low'].iloc[-1]) * k
     return 0
@@ -398,7 +409,7 @@ def trade_buy(ticker, k):
         
         while attempt < max_retries:
                 current_price = pyupbit.get_current_price(ticker)
-                send_discord_message(f"{ticker} /목표가: {target_price} / 현재가{current_price}")
+                send_discord_message(f"{ticker} /목표가: {target_price:,.2f} / 현재가{current_price:,.2f}")
 
                 if current_price < target_price :
                     print(f"매수 시도: {ticker}")
@@ -439,9 +450,17 @@ def trade_sell(ticker):
     attempts = 0  # 현재 조회 횟수
 
     ta_rsi = get_ta_rsi(ticker, 14)
+    
+    if ta_rsi is None or ta_rsi.empty:
+        print("RSI 데이터가 유효하지 않습니다.")
+        return None
     last_ta_rsi = ta_rsi.iloc[-1]
 
     stoch_rsi = ta_stochastic_rsi(ticker)   #스토캐스틱 RSI 계산
+    
+    if stoch_rsi is None or stoch_rsi.empty:
+        print("스토캐스틱 RSI 데이터가 유효하지 않습니다.")
+        return None
     last_stoch_rsi = stoch_rsi.iloc[-1]
 
     if profit_rate >= 0.5:  
