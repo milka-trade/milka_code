@@ -511,7 +511,7 @@ def send_profit_report():
 
                 if buyed_amount > 0:
                     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
-                    report_message += f"{b['currency']} 수익률 {profit_rate:.1f}% RSI {last_rsi:,.2f} S_RSI {last_stoch_rsi:.2f}\n"
+                    report_message += f"OFFICE[{b['currency']}] 수익률 {profit_rate:.1f}% [RSI] {last_rsi:,.2f} [S_RSI] {last_stoch_rsi:.2f}\n"
 
             send_discord_message(report_message)  # 슬랙으로 보고서 전송
 
