@@ -28,7 +28,7 @@ def load_ohlcv(ticker):
     global df_tickers
     if ticker not in df_tickers:   # 티커가 캐시에 없으면 데이터 가져오기     
         try:
-            df_tickers[ticker] = pyupbit.get_ohlcv(ticker, interval="minute15", count=200) 
+            df_tickers[ticker] = pyupbit.get_ohlcv(ticker, interval="minute15", count=50) 
             if df_tickers[ticker] is None or df_tickers[ticker].empty:
                 print(f"load_ohlcv / No data returned for ticker: {ticker}")
                 send_discord_message(f"load_ohlcv / No data returned for ticker: {ticker}")
@@ -295,30 +295,32 @@ def filtered_tickers(tickers, held_coins):
             latest_stoch_k = stoch_k.iloc[-1]
             latest_stoch_d = stoch_d.iloc[-1]
 
-            # if day_value_1 > 10_000_000_000 :  
+            if day_value_1 > 10_000_000_000 :  
                 # print(f"cond1: {t} / [value] : {day_value_1:,.0f} > 10십억")
 
-            if threshold_value < atr :  # Volatility check
+                if threshold_value < atr :  # Volatility check
                     
-                if pre_ema200 < last_ema200 and last_ema200 < last_ha_open < last_ha_close:
-                        
+                    if pre_ema200 < last_ema200 and last_ema200 < last_ha_open < last_ha_close:
+                            
                     # 스토캐스틱 매수신호 검증
-                    if latest_stoch_k < 0.2 and latest_stoch_k > latest_stoch_d:
-                        print(f"[cond 1]: [{t}] stoch_d < {latest_stoch_d:,.2f} < stoch_k:{latest_stoch_k:,.2f} < 0.2")
+                    # print(f"[검증 1]: [{t}] stoch_d: {latest_stoch_d:,.2f} < stoch_k:{latest_stoch_k:,.2f} < 0.25")
+                    # if latest_stoch_k < 0.25 and latest_stoch_k > latest_stoch_d:
+                    #     print(f"[cond 1]: [{t}] stoch_d: {latest_stoch_d:,.2f} < stoch_k:{latest_stoch_k:,.2f} < 0.25")
                         
-                        if 0 < last_ta_srsi <= 0.25:
-                            print(f"[cond 2]: [{t}] 0 < s-RSI:{last_ta_srsi:,.2f} <= 0.25")
+                        if 0 < last_ta_srsi <= 0.3:
+                            print(f"[cond 2]: [{t}] 0 < s-RSI:{last_ta_srsi:,.2f} <= 0.3")
 
                             # print(f"[검증 2.RSI]: [{t}] 0 < {last_ta_rsi:,.2f} < 60")    
-                            if last_ta_rsi < 60 :
-                                print(f"[cond 3]: [{t}] 50 < RSI:{last_ta_rsi:,.2f} < 60")    
+                            if last_ta_rsi < 70 :
+                                    print(f"[cond 3]: [{t}] RSI:{last_ta_rsi:,.2f} < 70")    
 
                                 # print(f"[cond 4]: [{t}] macd1:{previous_macd} < signal1:{previous_signal} / macd2:{last_macd} > signal2:{last_signal}")    
-                                # if previous_macd < previous_signal and last_macd > last_signal:
+                                # if last_macd > last_signal:
                                 #     print(f"[cond 4]: [{t}] macd1:{previous_macd:,.2f} < signal1:{previous_signal:,.2f} / macd2:{last_macd:,.2f} > signal2:{last_signal:,.2f}")    
+                                    # print(f"[cond 4]: [{t}] macd:{last_macd:,.2f} > signal:{last_signal:,.2f}")    
 
-                                if cur_price < day_open_price_1 * 1.2:
-                                    filtered_tickers.append(t)
+                                    if cur_price < day_open_price_1 * 1.2:
+                                        filtered_tickers.append(t)
             
         except Exception as e:
             send_discord_message(f"filtered_tickers/Error processing ticker {t}: {e}")
@@ -455,7 +457,7 @@ def trade_sell(ticker):
                 return sell_order
 
             else:
-                time.sleep(0.5)  # 짧은 대기                
+                time.sleep(1)  # 짧은 대기                
             attempts += 1  # 조회 횟수 증가
             
         if profit_rate >= 0.5 :
