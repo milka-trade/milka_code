@@ -158,3 +158,68 @@
 #         send_discord_message(f"current_price/현재가 조회 오류 ({ticker}): {e}")
 #         time.sleep(1)
 #         return None
+
+
+def calculate_macd(ticker):
+    # 데이터 가져오기
+    df = load_ohlcv(ticker)
+    if df is None or df.empty:
+        return None  # 데이터가 없으면 None 반환
+
+    # MACD 계산
+    macd = ta.trend.MACD(df['close'], window_slow=26, window_fast=12, window_sign=9)
+
+    # MACD 및 시그널선 계산
+    df['MACD'] = macd.macd()
+    df['Signal'] = macd.macd_signal()
+
+    return df[['MACD', 'Signal']]  # MACD와 시그널선 반환
+
+def ta_stochastic(ticker, window=14):
+    # 데이터 가져오기
+    df = load_ohlcv(ticker)
+    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50) 
+    if df is None or df.empty:
+        return None  # 데이터가 없으면 None 반환
+
+    # Stochastic 계산
+    high = df['high'].rolling(window=window).max()  # 지정된 기간의 최고가
+    low = df['low'].rolling(window=window).min()    # 지정된 기간의 최저가
+    current_close = df['close']                     # 현재 종가
+
+    # Stochastic %K 계산
+    stoch_k = (current_close - low) / (high - low)
+    stoch_k = stoch_k.replace([np.inf, -np.inf], np.nan)  # 무한대를 np.nan으로 대체
+
+    # Stochastic %D 계산 (스무딩)
+    stoch_d = stoch_k.rolling(window=3).mean()  # %K의 3일 이동 평균
+
+    return stoch_k, stoch_d  # Stochastic %K와 %D 반환
+
+            stoch_k, stoch_d = ta_stochastic(t)
+
+            # 스토캐스틱 매수전략 도입
+            latest_stoch_k = stoch_k.iloc[-1]
+            latest_stoch_d = stoch_d.iloc[-1]
+            
+                                # 스토캐스틱 매수신호 검증
+                    # print(f"[검증 1]: [{t}] stoch_d: {latest_stoch_d:,.2f} < stoch_k:{latest_stoch_k:,.2f} < 0.25")
+                    # if latest_stoch_k < 0.25 and latest_stoch_k > latest_stoch_d:
+                    #     print(f"[cond 1]: [{t}] stoch_d: {latest_stoch_d:,.2f} < stoch_k:{latest_stoch_k:,.2f} < 0.25")
+                    
+# MACD 계산
+            # macd_df = calculate_macd(t)
+            # if macd_df is None:
+            # return None  # 데이터가 없으면 None 반환
+
+            # 마지막 두 값 비교
+            last_macd = macd_df['MACD'].iloc[-1]
+            last_signal = macd_df['Signal'].iloc[-1]
+            previous_macd = macd_df['MACD'].iloc[-2]
+            previous_signal = macd_df['Signal'].iloc[-2]
+
+
+                                # print(f"[cond 4]: [{t}] macd1:{previous_macd} < signal1:{previous_signal} / macd2:{last_macd} > signal2:{last_signal}")    
+                                # if last_macd > last_signal:
+                                #     print(f"[cond 4]: [{t}] macd1:{previous_macd:,.2f} < signal1:{previous_signal:,.2f} / macd2:{last_macd:,.2f} > signal2:{last_signal:,.2f}")    
+                                    # print(f"[cond 4]: [{t}] macd:{last_macd:,.2f} > signal:{last_signal:,.2f}")    
