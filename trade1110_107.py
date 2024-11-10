@@ -90,6 +90,26 @@ def get_best_k(ticker="KRW-BTC"):
 
     return bestK
 
+def ta_stochastic(ticker, window=14):
+    # 데이터 가져오기
+    df = load_ohlcv(ticker)
+    if df is None or df.empty:
+        return None  # 데이터가 없으면 None 반환
+
+    # Stochastic 계산
+    high = df['high'].rolling(window=window).max()  # 지정된 기간의 최고가
+    low = df['low'].rolling(window=window).min()    # 지정된 기간의 최저가
+    current_close = df['close']                     # 현재 종가
+
+    # Stochastic %K 계산
+    stoch_k = (current_close - low) / (high - low)
+    stoch_k = stoch_k.replace([np.inf, -np.inf], np.nan)  # 무한대를 np.nan으로 대체
+
+    # Stochastic %D 계산 (스무딩)
+    stoch_d = stoch_k.rolling(window=3).mean()  # %K의 3일 이동 평균
+
+    return stoch_k, stoch_d  # Stochastic %K와 %D 반환
+
 def get_ta_rsi(ticker, period):
     # 데이터 가져오기
     df_rsi = load_ohlcv(ticker)
@@ -269,30 +289,35 @@ def filtered_tickers(tickers, held_coins):
             previous_macd = macd_df['MACD'].iloc[-2]
             previous_signal = macd_df['Signal'].iloc[-2]
 
-            # MACD가 시그널선을 상향 돌파했는지 확인
+            stoch_k, stoch_d = ta_stochastic(t)
+
+            # 스토캐스틱 매수전략 도입
+            latest_stoch_k = stoch_k.iloc[-1]
+            latest_stoch_d = stoch_d.iloc[-1]
 
             # if day_value_1 > 10_000_000_000 :  
                 # print(f"cond1: {t} / [value] : {day_value_1:,.0f} > 10십억")
 
-            # if threshold_value < atr :  # Volatility check
+            if threshold_value < atr :  # Volatility check
                     
-                    # print(f"검증: [{t}\] pre_ema: {pre_ema200:,.2f} < last_ema: {last_ema200:,.2f} \n open_candle: {last_ha_open:,.2f} < close_candle: {last_ha_close:,.2f}")
-            if pre_ema200 < last_ema200 and last_ema200 < last_ha_open < last_ha_close:
+                if pre_ema200 < last_ema200 and last_ema200 < last_ha_open < last_ha_close:
                         
-                        print(f"[검증 1.s_RSI]: [{t}] 0 < {last_ta_srsi:,.2f} <= 0.25")
+                    # 스토캐스틱 매수신호 검증
+                    if latest_stoch_k < 0.2 and latest_stoch_k > latest_stoch_d:
+                        print(f"[cond 1]: [{t}] stoch_d < {latest_stoch_d:,.2f} < stoch_k:{latest_stoch_k:,.2f} < 0.2")
+                        
                         if 0 < last_ta_srsi <= 0.25:
-                            print(f"[1.s_RSI]: [{t}] 0 < {last_ta_srsi:,.2f} <= 0.25")
+                            print(f"[cond 2]: [{t}] 0 < s-RSI:{last_ta_srsi:,.2f} <= 0.25")
 
-                            print(f"[검증 2.MACD]: [{t}] {previous_macd} < {previous_signal} \n[{t}] {last_macd} < {last_signal}")    
-                            if previous_macd < previous_signal and last_macd > last_signal:
-                                print(f"[3.MACD] [{t} MACD가 시그널선 상향 돌파.")
+                            # print(f"[검증 2.RSI]: [{t}] 0 < {last_ta_rsi:,.2f} < 60")    
+                            if last_ta_rsi < 60 :
+                                print(f"[cond 3]: [{t}] 50 < RSI:{last_ta_rsi:,.2f} < 60")    
 
-                                print(f"[검증 2.RSI]: [{t}] 0 < {last_ta_rsi:,.2f} < 60")    
-                                if 0 < last_ta_rsi < 60 :
-                                    print(f"[2.RSI]: [{t}] 0 < {last_ta_rsi:,.2f} < 60")    
+                                # print(f"[cond 4]: [{t}] macd1:{previous_macd} < signal1:{previous_signal} / macd2:{last_macd} > signal2:{last_signal}")    
+                                # if previous_macd < previous_signal and last_macd > last_signal:
+                                #     print(f"[cond 4]: [{t}] macd1:{previous_macd:,.2f} < signal1:{previous_signal:,.2f} / macd2:{last_macd:,.2f} > signal2:{last_signal:,.2f}")    
 
-                                
-                                # if cur_price < day_open_price_1 * 1.9:
+                                if cur_price < day_open_price_1 * 1.2:
                                     filtered_tickers.append(t)
             
         except Exception as e:
@@ -465,7 +490,7 @@ def send_profit_report():
 
                 if buyed_amount > 0:
                     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
-                    report_message += f"{b['currency']} 수익률 {profit_rate:.1f}% RSI {last_rsi} S_RSI {last_stoch_rsi:.2f}\n"
+                    report_message += f"{b['currency']} 수익률 {profit_rate:.1f}% RSI {last_rsi:,.2f} S_RSI {last_stoch_rsi:.2f}\n"
 
             send_discord_message(report_message)  # 슬랙으로 보고서 전송
 
