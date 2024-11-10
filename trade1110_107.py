@@ -383,20 +383,6 @@ def trade_sell(ticker):
     max_attempts = 60  # 최대 조회 횟수
     attempts = 0  # 현재 조회 횟수
 
-    ta_rsi = get_ta_rsi(ticker, 14)
-    
-    if ta_rsi is None or ta_rsi.empty:
-        print("RSI 데이터가 유효하지 않습니다.")
-        return None
-    last_ta_rsi = ta_rsi.iloc[-1]
-
-    stoch_rsi = ta_stochastic_rsi(ticker)   #스토캐스틱 RSI 계산
-    
-    if stoch_rsi is None or stoch_rsi.empty:
-        print("스토캐스틱 RSI 데이터가 유효하지 않습니다.")
-        return None
-    last_stoch_rsi = stoch_rsi.iloc[-1]
-
     if profit_rate >= 0.5:  
         while attempts < max_attempts:
             current_price = pyupbit.get_current_price(ticker)  # 현재 가격 재조회
@@ -406,16 +392,16 @@ def trade_sell(ticker):
                 
             if profit_rate >= 1.5:
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
-                send_discord_message(f"매도: [{ticker}] / 현재가: {current_price}/ 수익률: {profit_rate:.2f}/ 시도 {attempts + 1} / {max_attempts} \n[{ticker}] RSI: {last_ta_rsi:,.2f} s_RSI: {last_stoch_rsi:,.2f}%")
+                send_discord_message(f"매도: [{ticker}] / 현재가: {current_price}/ 수익률: {profit_rate:.2f}/ 시도 {attempts + 1} / {max_attempts}")
                 return sell_order
 
             else:
-                time.sleep(1)  # 짧은 대기                
+                time.sleep(0.5)  # 짧은 대기                
             attempts += 1  # 조회 횟수 증가
             
         if profit_rate >= 0.6 :
             sell_order = upbit.sell_market_order(ticker, buyed_amount)
-            send_discord_message(f"최종 매도: {ticker}/ 현재가: {current_price}/ 수익률: {profit_rate:.2f}% / s_RSI: {last_stoch_rsi:,.2f}")
+            send_discord_message(f"최종 매도: {ticker}/ 현재가: {current_price}/ 수익률: {profit_rate:.2f}%")
             return sell_order   
         else:
             return None
