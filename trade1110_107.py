@@ -56,8 +56,8 @@ def get_balance(ticker):
     return 0
 
 def get_ema(ticker, window):
-    # df = load_ohlcv(ticker)
-    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200)
+    df = load_ohlcv(ticker)
+    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200)
 
     if df is not None and not df.empty:
         return df['close'].ewm(span=window, adjust=False).mean()  # EMA 계산 후 마지막 값 반환
@@ -129,8 +129,8 @@ def ta_stochastic_rsi(ticker):
     return stoch_rsi if not stoch_rsi.empty else 0
 
 def calculate_ha_candles(ticker):
-    # df = load_ohlcv(ticker)  # 데이터 로드
-    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200) 
+    df = load_ohlcv(ticker)  # 데이터 로드
+    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200) 
     if df.empty:
         raise ValueError(f"No data found for ticker: {ticker}")
 
@@ -206,12 +206,6 @@ def filtered_tickers(tickers, held_coins):
             continue
 
         try:
-            # df = load_ohlcv(t) 
-            # if df is None or df.empty:
-            #     print(f"filtered_tickers/No data for ticker: {t}")
-            #     send_discord_message(f"filtered_tickers/No data for ticker: {t}")
-            #     continue
-
             df_day = pyupbit.get_ohlcv(t, interval="day", count=3)  
             if df_day is None or df_day.empty or 'high' not in df_day or 'low' not in df_day or 'open' not in df_day:
                 continue  
@@ -260,13 +254,13 @@ def filtered_tickers(tickers, held_coins):
                     
                     if pre_ema200 < last_ema200 and last_ema200 < last_ha_open < last_ha_close:
                         
-                        if 0 < last_ta_srsi <= 0.25:
-                            print(f"[cond 2]: [{t}] 0 < s-RSI:{last_ta_srsi:,.2f} <= 0.25")
+                        if 0 < previous_ta_srsi < last_ta_srsi <= 0.2:
+                            print(f"[cond 2]: [{t}] 0 < s-RSI:{last_ta_srsi:,.2f} <= 0.2")
   
                             if last_ta_rsi < 65 :
                                 print(f"[cond 3]: [{t}] RSI:{last_ta_rsi:,.2f} < 65")    
 
-                                if cur_price < day_open_price_1 * 1.2:
+                                if cur_price < day_open_price_1 * 1.07:
                                     filtered_tickers.append(t)
             
         except Exception as e:
@@ -298,8 +292,8 @@ def get_best_ticker():
 
     for ticker in filtered_list:   # 조회할 코인 필터링
         k = get_best_k(ticker)
-        # df = load_ohlcv(ticker)
-        df = pyupbit.get_ohlcv(ticker, interval="minute15", count=10) 
+        df = load_ohlcv(ticker)
+        # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=10) 
         if df is None or df.empty:
             continue
     
@@ -318,14 +312,14 @@ def get_best_ticker():
     return bestC, interest, best_k  # 최고의 코인, 수익률, K 반환
     
 def get_target_price(ticker, k):  #변동성 돌파 전략 구현
-    # df = load_ohlcv(ticker)
-    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=2) 
+    df = load_ohlcv(ticker)
+    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=2) 
     if df is not None and not df.empty:
         return df['close'].iloc[-1] + (df['high'].iloc[-1] - df['low'].iloc[-1]) * k
     return 0
 
 def trade_buy(ticker, k):
-    # df = load_ohlcv(ticker) 
+    
     krw = get_balance("KRW")
     buyed_amount = get_balance(ticker.split("-")[1]) 
     max_retries = 20  
@@ -333,12 +327,6 @@ def trade_buy(ticker, k):
     
     attempt = 0  # 시도 횟수 초기화
     target_price = None  # target_price 초기화
-    
-    ta_rsi = get_ta_rsi(ticker, 14)
-    last_ta_rsi = ta_rsi.iloc[-1]
-
-    stoch_rsi = ta_stochastic_rsi(ticker)
-    last_stoch_rsi = stoch_rsi.iloc[-1]
 
     if buyed_amount == 0 and ticker.split("-")[1] not in ["BTC", "ETH"] and krw >= 50_000 :  # 매수 조건 확인
         target_price = get_target_price(ticker, k)
@@ -354,7 +342,7 @@ def trade_buy(ticker, k):
                         try:
                             buy_order = upbit.buy_market_order(ticker, buy_size)
                             print(f"매수 성공: {ticker}")
-                            send_discord_message(f"매수 성공: [{ticker}] 현재가 {current_price:,.2f} < 목표가 {target_price:,.2f} /(시도 {attempt + 1}/{max_retries}) \n[{ticker}] RSI {last_ta_rsi:,.2f} / S_RSI {last_stoch_rsi:,.2f}")
+                            send_discord_message(f"매수 성공: [{ticker}] 현재가 {current_price:,.2f} < 목표가 {target_price:,.2f} /(시도 {attempt + 1}/{max_retries})")
                             return buy_order
 
                         except Exception as e:
