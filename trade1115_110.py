@@ -195,6 +195,24 @@ def get_dynamic_threshold(tickers):
 
     return np.median(atr_values) if atr_values else 0.05  # Fallback to 0.05 if no ATR values
 
+def get_bollinger_band_lower(ticker, window=20, std_dev=2):
+    """특정 티커의 볼린저 밴드 하단값을 가져오는 함수"""
+    # 15분 봉 데이터 가져오기
+    df = load_ohlcv(ticker)
+    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200)
+    if df is None or df.empty:
+        return None  # 데이터가 없으면 None 반환
+
+    # 이동 평균과 표준 편차 계산
+    df['MA'] = df['close'].rolling(window=window).mean()
+    df['STD'] = df['close'].rolling(window=window).std()
+
+    # 볼린저 밴드 하단 계산
+    df['Lower_Band'] = df['MA'] - (df['STD'] * std_dev)
+
+    # 마지막 하단 밴드 값 반환
+    return df['Lower_Band'].iloc[-1]
+
 def filtered_tickers(tickers, held_coins):
     """특정 조건에 맞는 티커 필터링"""
     filtered_tickers = []
@@ -246,6 +264,9 @@ def filtered_tickers(tickers, held_coins):
             last_ha_close = ha_df['HA_Close'].iloc[-1]
             last_ha_open = ha_df['HA_Open'].iloc[-1]
 
+            lower_BB_value = get_bollinger_band_lower(t)
+            current_price = pyupbit.get_current_price(t) 
+
             if day_value_1 > 10_000_000_000 :  
                 # print(f"cond 1: {t} / [value] : {day_value_1:,.0f} > 10십억")
 
@@ -264,8 +285,12 @@ def filtered_tickers(tickers, held_coins):
                                 if last_ta_rsi < 65 :
                                     print(f"[cond 6]: [{t}] RSI:{last_ta_rsi:,.2f} < 65")    
 
-                                    if cur_price < day_open_price_1 * 1.1:
-                                        filtered_tickers.append(t)
+                                    if lower_BB_value is not None and current_price is not None:
+                                        if lower_BB_value > current_price:
+                                            print(f"[cond 7]: [{t}] BB:{lower_BB_value} > price:{current_price}")    
+
+                                            if cur_price < day_open_price_1 * 1.1:
+                                                filtered_tickers.append(t)
             
         except Exception as e:
             send_discord_message(f"filtered_tickers/Error processing ticker {t}: {e}")
