@@ -228,6 +228,7 @@ def filtered_tickers(tickers, held_coins):
             # if df_day is None or df_day.empty or 'high' not in df_day or 'low' not in df_day or 'open' not in df_day:
             #     continue  
             
+            df_15 = pyupbit.get_ohlcv(t, interval="minute15", count=2)
             df_240 = pyupbit.get_ohlcv(t, interval="minute240", count=3)  
             if df_240 is None or df_240.empty or 'high' not in df_240 or 'low' not in df_240 or 'open' not in df_240:
                 continue  
@@ -238,6 +239,7 @@ def filtered_tickers(tickers, held_coins):
             # day_value_1 = df_day['value'].iloc[-1]
             m240_open = df_240['open'].iloc[-1] 
             value_240 = df_240['value'].iloc[-1]
+            df_15_open = df_15['open'].iloc[-1]
             atr = get_atr(t, 14)
 
             # New Indicators and Patterns #2
@@ -276,27 +278,20 @@ def filtered_tickers(tickers, held_coins):
             if threshold_value < atr :
                     # print(f"cond 2: {t} / [임계치] : {threshold_value:,.0f} < [변동폭] : {atr:,.0f}")
                     
-                    if pre_ema200 < last_ema200 <last_ha_close : 
+                    if pre_ema200 < last_ema200 < last_ha_close : 
                             # print(f"[cond 3]: [{t}] ema2:{pre_ema200:,.2f} < ema1:{last_ema200:,.2f} < candle : {last_ha_close:,.2f}")
                         
                         # if last_ha_open < last_ha_close:
                             # print(f"[cond 4]: [{t}] candle_open:{last_ha_open:,.1f} < candle_close:{last_ha_close:,.1f}")
                         
                             if 0 < previous_ta_srsi < last_ta_srsi <= 0.2:
-                                print(f"[cond 5]: [{t}] 0 < pre s_RSI: {previous_ta_srsi} < last s_RSI:{last_ta_srsi:,.2f} <= 0.2")   
-                                send_discord_message(f"[cond 5]: [{t}] 0 < pre s_RSI: {previous_ta_srsi} < last s_RSI:{last_ta_srsi:,.2f} <= 0.2")
+                                print(f"[cond 5]: [{t}] 0 < pre s_RSI: {previous_ta_srsi:,.2f} < last s_RSI:{last_ta_srsi:,.2f} <= 0.2")   
+                                send_discord_message(f"[cond 5]: [{t}] 0 < pre s_RSI: {previous_ta_srsi:,.2f} < last s_RSI:{last_ta_srsi:,.2f} <= 0.2")
     
                                 if last_ta_rsi < 65 :
                                     print(f"[cond 6]: [{t}] RSI:{last_ta_rsi:,.2f} < 65")    
 
-                                    # if lower_BB_value is not None and current_price is not None:
-                                        # print(f"[검증 7]: [{t}] BB:{lower_BB_value:,.2f} > price:{current_price}") 
-                                        
-                                        # if lower_BB_value *1.03 > current_price:
-                                        #     print(f"[cond 7]: [{t}] BB:{lower_BB_value:,.2f} > price:{current_price}")
-                                        #     send_discord_message(f"[검증 7]: [{t}] BB:{lower_BB_value:,.2f} > price:{current_price}")       
-
-                                    if cur_price < m240_open * 1.05:
+                                    if df_15_open <= cur_price < df_15_open * 1.05:
                                                 filtered_tickers.append(t)
             
         except Exception as e:
@@ -365,7 +360,6 @@ def trade_buy(ticker, k):
     target_price = None  # target_price 초기화
 
     if buyed_amount == 0 and ticker.split("-")[1] not in ["BTC", "ETH"] and krw >= 50_000 :  # 매수 조건 확인
-        buy_time = datetime.now().strftime('%m/%d %H:%M:%S')  # 시작시간 기록
         target_price = get_target_price(ticker, k)
         
         while attempt < max_retries:
@@ -381,7 +375,7 @@ def trade_buy(ticker, k):
                         try:
                             buy_order = upbit.buy_market_order(ticker, buy_size)
                             print(f"매수 성공: {ticker}")
-                            send_discord_message(f"{buy_time} 매수 성공: [{ticker}] 현재가 {current_price:,.2f} < 목표가 {target_price:,.2f} / RSI {last_rsi:,.2f} /s_RSI {last_stoch_rsi:,.2f}")
+                            send_discord_message(f"매수 성공: [{ticker}] 현재가 {current_price:,.2f} < 목표가 {target_price:,.2f} / RSI {last_rsi:,.2f} /s_RSI {last_stoch_rsi:,.2f}")
                             return buy_order
 
                         except Exception as e:
@@ -406,21 +400,19 @@ def trade_sell(ticker):
     avg_buy_price = upbit.get_avg_buy_price(currency)
     current_price = pyupbit.get_current_price(ticker)
     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
-    last_ema20 = get_ema(ticker, 20).iloc[-1]    #200봉 지수이동평균 계산
+    last_ema20 = get_ema(ticker, 20).iloc[-1]    #20봉 지수이동평균 계산
 
     selltime = datetime.now()
-    sell_start = selltime.replace(hour=8, minute=58 , second=00, microsecond=0)
+    sell_start = selltime.replace(hour=8, minute=40 , second=00, microsecond=0)
     sell_end = selltime.replace(hour=8, minute=59, second=50, microsecond=0)
-
 
     max_attempts = 50  # 최대 조회 횟수
     attempts = 0  # 현재 조회 횟수
-
+    
     if sell_start <= selltime <= sell_end:      # 매도 제한시간이면
         if profit_rate >= -1.5 and last_ema20 < current_price :
             sell_order = upbit.sell_market_order(ticker, buyed_amount)
             send_discord_message(f"[시초가 전량매도]: [{ticker}]/ 현재가: {current_price}/ 수익률: {profit_rate:.2f}% / ema20: {last_ema20}")
-        
         
     else:
         if profit_rate >= 0.5:  
@@ -428,11 +420,11 @@ def trade_sell(ticker):
                 current_price = pyupbit.get_current_price(ticker)  # 현재 가격 재조회
                 profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
                     
-                print(f"{ticker} / 시도 {attempts + 1} / {max_attempts} - / 현재가 {current_price} 수익률 {profit_rate:.2f}% ")
+                print(f"{ticker} / [시도 {attempts + 1} / {max_attempts}] / 현재가 {current_price} 수익률 {profit_rate:.2f}% ")
                     
                 if profit_rate >= 1.5:
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
-                    send_discord_message(f"[목표가 달성]: [{ticker}] / 현재가: {current_price}/ 수익률: {profit_rate:.2f}/ 시도 {attempts + 1} / {max_attempts}")
+                    send_discord_message(f"[목표가 달성]: {ticker} / 현재가: {current_price}/ 수익률: {profit_rate:.2f}/ 시도 {attempts + 1} / {max_attempts}")
                     return sell_order
 
                 else:
@@ -471,9 +463,8 @@ def send_profit_report():
                 last_rsi = get_ta_rsi(ticker,14).iloc[-1]
 
                 if buyed_amount > 0:
-                    report_time = datetime.now().strftime('%m/%d %H:%M:%S')  # 시작시간 기록
                     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
-                    report_message += f"{report_time} [{b['currency']}] 수익률 {profit_rate:.1f}% [RSI] {last_rsi:,.2f} [s_RSI] {last_stoch_rsi:.2f}\n"
+                    report_message += f"[{b['currency']}] 수익률 {profit_rate:.1f}% [RSI] {last_rsi:,.2f} [s_RSI] {last_stoch_rsi:.2f}\n"
 
             send_discord_message(report_message)  # 슬랙으로 보고서 전송
 
