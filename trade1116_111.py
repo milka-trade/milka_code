@@ -74,7 +74,7 @@ def get_best_k(ticker):
     if df is None or df.empty:
         return bestK  # 데이터가 없으면 초기 K 반환
     
-    for k in np.arange(0.1, 0.3, 0.05):  # K 값을 0.05부터 0.15까지 반복
+    for k in np.arange(0.1, 0.2, 0.1):  
         df['range'] = (df['high'] - df['low']) * k      #변동성 계산
         df['target'] = df['open'] + df['range'].shift(1)  # 매수 목표가 설정
         fee = 0.0005  # 거래 수수료 (0.05%로 설정)
@@ -224,14 +224,20 @@ def filtered_tickers(tickers, held_coins):
             continue
 
         try:
-            df_day = pyupbit.get_ohlcv(t, interval="day", count=3)  
-            if df_day is None or df_day.empty or 'high' not in df_day or 'low' not in df_day or 'open' not in df_day:
+            # df_day = pyupbit.get_ohlcv(t, interval="day", count=3)  
+            # if df_day is None or df_day.empty or 'high' not in df_day or 'low' not in df_day or 'open' not in df_day:
+            #     continue  
+            
+            df_240 = pyupbit.get_ohlcv(t, interval="minute240", count=3)  
+            if df_240 is None or df_240.empty or 'high' not in df_240 or 'low' not in df_240 or 'open' not in df_240:
                 continue  
             
             cur_price = pyupbit.get_current_price(t)
                       
-            day_open_price_1 = df_day['open'].iloc[-1]  #9시 기준 당일 시가
-            day_value_1 = df_day['value'].iloc[-1] 
+            # day_open_price_1 = df_day['open'].iloc[-1]  #9시 기준 당일 시가
+            # day_value_1 = df_day['value'].iloc[-1]
+            m240_open = df_240['open'].iloc[-1] 
+            value_240 = df_240['value'].iloc[-1]
             atr = get_atr(t, 14)
 
             # New Indicators and Patterns #2
@@ -262,15 +268,12 @@ def filtered_tickers(tickers, held_coins):
             # 하이킨 아시 캔들의 종가
             pre_ha_close = ha_df['HA_Close'].iloc[-2]
             last_ha_close = ha_df['HA_Close'].iloc[-1]
-            last_ha_open = ha_df['HA_Open'].iloc[-1]
+            last_ha_open = ha_df['HA_Open'].iloc[-1] 
 
-            lower_BB_value = get_bollinger_band_lower(t)
-            current_price = pyupbit.get_current_price(t) 
+            # if value_240 >3_000_000_000 :  
+            #     print(f"cond 1: {t} / [value] : {value_240:,.0f} > 10십억")
 
-            if day_value_1 > 10_000_000_000 :  
-                # print(f"cond 1: {t} / [value] : {day_value_1:,.0f} > 10십억")
-
-                if threshold_value < atr :
+            if threshold_value < atr :
                     # print(f"cond 2: {t} / [임계치] : {threshold_value:,.0f} < [변동폭] : {atr:,.0f}")
                     
                     if pre_ema200 < last_ema200 <last_ha_close : 
@@ -280,19 +283,20 @@ def filtered_tickers(tickers, held_coins):
                             # print(f"[cond 4]: [{t}] candle_open:{last_ha_open:,.1f} < candle_close:{last_ha_close:,.1f}")
                         
                             if 0 < previous_ta_srsi < last_ta_srsi <= 0.2:
-                                print(f"[cond 5]: [{t}] 0 < s-RSI:{last_ta_srsi:,.2f} <= 0.2")
+                                print(f"[cond 5]: [{t}] 0 < pre s_RSI: {previous_ta_srsi} < last s_RSI:{last_ta_srsi:,.2f} <= 0.2")   
+                                send_discord_message(f"[cond 5]: [{t}] 0 < pre s_RSI: {previous_ta_srsi} < last s_RSI:{last_ta_srsi:,.2f} <= 0.2")
     
                                 if last_ta_rsi < 65 :
                                     print(f"[cond 6]: [{t}] RSI:{last_ta_rsi:,.2f} < 65")    
 
-                                    if lower_BB_value is not None and current_price is not None:
+                                    # if lower_BB_value is not None and current_price is not None:
                                         # print(f"[검증 7]: [{t}] BB:{lower_BB_value:,.2f} > price:{current_price}") 
                                         
                                         # if lower_BB_value *1.03 > current_price:
                                         #     print(f"[cond 7]: [{t}] BB:{lower_BB_value:,.2f} > price:{current_price}")
                                         #     send_discord_message(f"[검증 7]: [{t}] BB:{lower_BB_value:,.2f} > price:{current_price}")       
 
-                                            if cur_price < day_open_price_1 * 1.1:
+                                    if cur_price < m240_open * 1.05:
                                                 filtered_tickers.append(t)
             
         except Exception as e:
@@ -322,12 +326,12 @@ def get_best_ticker():
     
     bestC = None  # 초기 최고 코인 초기화
     interest = 0  # 초기 수익률
-    best_k = 0.5  # 초기 K 값
+    best_k = 0.1  # 초기 K 값
 
     for ticker in filtered_list:   # 조회할 코인 필터링
         k = get_best_k(ticker)
-        df = load_ohlcv(ticker)
-        # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=10) 
+        # df = load_ohlcv(ticker)
+        df = pyupbit.get_ohlcv(ticker, interval="minute15", count=20) 
         if df is None or df.empty:
             continue
     
@@ -340,8 +344,6 @@ def get_best_ticker():
             bestC = ticker
             interest = df['hpr'].iloc[-1]
             best_k = k  # 최적 K 값도 업데이트
-
-        time.sleep(1)  # API 호출 제한을 위한 대기
 
     return bestC, interest, best_k  # 최고의 코인, 수익률, K 반환
     
@@ -363,10 +365,12 @@ def trade_buy(ticker, k):
     target_price = None  # target_price 초기화
 
     if buyed_amount == 0 and ticker.split("-")[1] not in ["BTC", "ETH"] and krw >= 50_000 :  # 매수 조건 확인
+        buy_time = datetime.now().strftime('%m/%d %H:%M:%S')  # 시작시간 기록
         target_price = get_target_price(ticker, k)
         
         while attempt < max_retries:
                 current_price = pyupbit.get_current_price(ticker)
+                print(f"가격 확인 중: {ticker}, 목표가 {target_price:,.2f} / 현재가 {current_price:,.2f} (시도 {attempt + 1}/{max_retries})")
 
                 if current_price < target_price :
                     # print(f"매수 시도: {ticker}")
@@ -377,7 +381,7 @@ def trade_buy(ticker, k):
                         try:
                             buy_order = upbit.buy_market_order(ticker, buy_size)
                             print(f"매수 성공: {ticker}")
-                            send_discord_message(f"매수 성공: [{ticker}] 현재가 {current_price:,.2f} < 목표가 {target_price:,.2f} / RSI {last_rsi:,.2f} /s_RSI {last_stoch_rsi:,.2f}")
+                            send_discord_message(f"{buy_time} 매수 성공: [{ticker}] 현재가 {current_price:,.2f} < 목표가 {target_price:,.2f} / RSI {last_rsi:,.2f} /s_RSI {last_stoch_rsi:,.2f}")
                             return buy_order
 
                         except Exception as e:
@@ -402,34 +406,46 @@ def trade_sell(ticker):
     avg_buy_price = upbit.get_avg_buy_price(currency)
     current_price = pyupbit.get_current_price(ticker)
     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
-    
+    last_ema20 = get_ema(ticker, 20).iloc[-1]    #200봉 지수이동평균 계산
+
+    selltime = datetime.now()
+    sell_start = selltime.replace(hour=8, minute=58 , second=00, microsecond=0)
+    sell_end = selltime.replace(hour=8, minute=59, second=50, microsecond=0)
+
+
     max_attempts = 50  # 최대 조회 횟수
     attempts = 0  # 현재 조회 횟수
 
-    if profit_rate >= 0.5:  
-        while attempts < max_attempts:
-            current_price = pyupbit.get_current_price(ticker)  # 현재 가격 재조회
-            profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
-                
-            print(f"{ticker} / 시도 {attempts + 1} / {max_attempts} - / 현재가 {current_price} 수익률 {profit_rate:.2f}% ")
-                
-            if profit_rate >= 1.5:
-                sell_order = upbit.sell_market_order(ticker, buyed_amount)
-                send_discord_message(f"[최종매도-1]: [{ticker}] / 현재가: {current_price}/ 수익률: {profit_rate:.2f}/ 시도 {attempts + 1} / {max_attempts}")
-                return sell_order
+    if sell_start <= selltime <= sell_end:      # 매도 제한시간이면
+        if profit_rate >= -1.5 and last_ema20 < current_price :
+            sell_order = upbit.sell_market_order(ticker, buyed_amount)
+            send_discord_message(f"[시초가 전량매도]: [{ticker}]/ 현재가: {current_price}/ 수익률: {profit_rate:.2f}% / ema20: {last_ema20}")
+        
+        
+    else:
+        if profit_rate >= 0.5:  
+            while attempts < max_attempts:
+                current_price = pyupbit.get_current_price(ticker)  # 현재 가격 재조회
+                profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
+                    
+                print(f"{ticker} / 시도 {attempts + 1} / {max_attempts} - / 현재가 {current_price} 수익률 {profit_rate:.2f}% ")
+                    
+                if profit_rate >= 1.5:
+                    sell_order = upbit.sell_market_order(ticker, buyed_amount)
+                    send_discord_message(f"[목표가 달성]: [{ticker}] / 현재가: {current_price}/ 수익률: {profit_rate:.2f}/ 시도 {attempts + 1} / {max_attempts}")
+                    return sell_order
 
+                else:
+                    time.sleep(0.5)  # 짧은 대기                
+                attempts += 1  # 조회 횟수 증가
+                
+            if profit_rate >= 0.6 :
+                if last_ema20 < current_price :
+                    sell_order = upbit.sell_market_order(ticker, buyed_amount)
+                    send_discord_message(f"[매도시도 초과]: [{ticker}]/ 현재가: {current_price}/ 수익률: {profit_rate:.2f}% / ema20: {last_ema20}")
+                    return sell_order   
             else:
-                time.sleep(0.5)  # 짧은 대기                
-            attempts += 1  # 조회 횟수 증가
-            
-        if profit_rate >= 0.6 :
-            last_ema200 = get_ema(ticker, 200).iloc[-1]    #200봉 지수이동평균 계산
-            if last_ema200 < current_price :
-                sell_order = upbit.sell_market_order(ticker, buyed_amount)
-                send_discord_message(f"[시도초과/매도]: [{ticker}]/ 현재가: {current_price}/ 수익률: {profit_rate:.2f}%")
-                return sell_order   
-        else:
-            return None
+                return None
     return None
 
 def send_profit_report():
@@ -491,9 +507,9 @@ def selling_logic():
 def buying_logic():
 
     restricted_start_hour = 8
-    restricted_start_minute = 30
+    restricted_start_minute = 40
     restricted_end_hour = 9
-    restricted_end_minute = 10
+    restricted_end_minute = 5
 
     while True:
         try:
@@ -502,7 +518,7 @@ def buying_logic():
             restricted_end = stopbuy_time.replace(hour=restricted_end_hour, minute=restricted_end_minute, second=0, microsecond=0)
 
             if restricted_start <= stopbuy_time <= restricted_end:  # 매수 제한 시간 체크
-                time.sleep(300) 
+                time.sleep(60) 
                 continue
 
             else:  # 매수 금지 시간이 아닐 때
@@ -516,14 +532,14 @@ def buying_logic():
                         send_discord_message( f"{buy_time} [선정코인] : {best_ticker} / k값 : {best_k:,.2f} / 수익률 : {interest:,.2f}")
                         result = trade_buy(best_ticker, best_k)
                         if result:  # 매수 성공 여부 확인
-                            time.sleep(120)
+                            time.sleep(30)
                         else:
                             return None
                     else:
-                        time.sleep(120)
+                        time.sleep(30)
 
                 else:
-                    time.sleep(120)
+                    time.sleep(30)
 
         except Exception as e:
             print(f"buying_logic / 에러 발생: {e}")
