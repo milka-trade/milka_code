@@ -353,7 +353,7 @@ def trade_buy(ticker, k):
     
     krw = get_balance("KRW")
     buyed_amount = get_balance(ticker.split("-")[1]) 
-    max_retries = 20  
+    max_retries = 5  
     buy_size = krw * 0.9995  
     
     attempt = 0  # 시도 횟수 초기화
