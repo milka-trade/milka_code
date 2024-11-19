@@ -354,7 +354,7 @@ def trade_buy(ticker, k):
     krw = get_balance("KRW")
     buyed_amount = get_balance(ticker.split("-")[1]) 
     max_retries = 20  
-    buy_size = min(krw * 0.9995, 260_000)  
+    buy_size = krw * 0.9995  
     
     attempt = 0  # 시도 횟수 초기화
     target_price = None  # target_price 초기화
@@ -412,7 +412,7 @@ def trade_sell(ticker):
     if sell_start <= selltime <= sell_end:      # 매도 제한시간이면
         if profit_rate >= -1.5 and last_ema20 < current_price :
             sell_order = upbit.sell_market_order(ticker, buyed_amount)
-            send_discord_message(f"[시초가 전량매도]: [{ticker}]/ 현재가: {current_price}/ 수익률: {profit_rate:.2f}% / ema20: {last_ema20}")
+            send_discord_message(f"[시초가 전량매도]: [{ticker}]/ 현재가: {current_price}/ 수익률: {profit_rate:,.2f}% / ema20: {last_ema20:,.2f}")
         
     else:
         if profit_rate >= 0.5:  
