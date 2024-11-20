@@ -403,14 +403,14 @@ def trade_sell(ticker):
     last_ema20 = get_ema(ticker, 20).iloc[-1]    #20봉 지수이동평균 계산
 
     selltime = datetime.now()
-    sell_start = selltime.replace(hour=8, minute=40 , second=00, microsecond=0)
+    sell_start = selltime.replace(hour=8, minute=50 , second=00, microsecond=0)
     sell_end = selltime.replace(hour=8, minute=59, second=50, microsecond=0)
 
     max_attempts = 50  # 최대 조회 횟수
     attempts = 0  # 현재 조회 횟수
     
     if sell_start <= selltime <= sell_end:      # 매도 제한시간이면
-        if profit_rate >= -1.5 and last_ema20 < current_price :
+        if profit_rate >= -0.7 and last_ema20 < current_price :
             sell_order = upbit.sell_market_order(ticker, buyed_amount)
             send_discord_message(f"[시초가 전량매도]: [{ticker}]/ 현재가: {current_price}/ 수익률: {profit_rate:,.2f}% / ema20: {last_ema20:,.2f}")
         
