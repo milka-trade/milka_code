@@ -250,6 +250,8 @@ def filtered_tickers(tickers, held_coins):
             last_ema200 = get_ema(t, 200).iloc[-1]    #200봉 지수이동평균 계산
             pre_ema200 = get_ema(t, 200).iloc[-2]
             
+            last_ema20 = get_ema(t, 20).iloc[-1]    #200봉 지수이동평균 계산
+            
             ta_rsi = get_ta_rsi(t, 14)
             last_ta_rsi = ta_rsi.iloc[-1]
             
@@ -292,7 +294,10 @@ def filtered_tickers(tickers, held_coins):
                                     print(f"[cond 6]: [{t}] RSI:{last_ta_rsi:,.2f} < 65")    
 
                                     if df_15_open <= cur_price < df_15_open * 1.05:
-                                                filtered_tickers.append(t)
+                                        
+                                        if last_ema20 > cur_price :
+                                            
+                                            filtered_tickers.append(t)
             
         except Exception as e:
             send_discord_message(f"filtered_tickers/Error processing ticker {t}: {e}")
