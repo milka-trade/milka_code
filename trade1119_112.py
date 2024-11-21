@@ -409,13 +409,13 @@ def trade_sell(ticker):
     max_attempts = 50  # 최대 조회 횟수
     attempts = 0  # 현재 조회 횟수
     
-    if sell_start <= selltime <= sell_end:      # 매도 제한시간이면
-        if profit_rate >= -0.7 and last_ema20 < current_price :
-            sell_order = upbit.sell_market_order(ticker, buyed_amount)
-            send_discord_message(f"[시초가 전량매도]: [{ticker}]/ 현재가: {current_price}/ 수익률: {profit_rate:,.2f}% / ema20: {last_ema20:,.2f}")
+    # if sell_start <= selltime <= sell_end:      # 매도 제한시간이면
+    #     if profit_rate >= 0.3 and last_ema20 < current_price :
+    #         sell_order = upbit.sell_market_order(ticker, buyed_amount)
+    #         send_discord_message(f"[시초가 전량매도]: [{ticker}]/ 현재가: {current_price}/ 수익률: {profit_rate:,.2f}% / ema20: {last_ema20:,.2f}")
         
-    else:
-        if profit_rate >= 0.5:  
+    # else:
+    if profit_rate >= 0.5:  
             while attempts < max_attempts:
                 current_price = pyupbit.get_current_price(ticker)  # 현재 가격 재조회
                 profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
@@ -431,7 +431,7 @@ def trade_sell(ticker):
                     time.sleep(0.5)  # 짧은 대기                
                 attempts += 1  # 조회 횟수 증가
                 
-            if profit_rate >= 0.6 :
+            if profit_rate >= 0.7 :
                 if last_ema20 < current_price :
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
                     send_discord_message(f"[매도시도 초과]: [{ticker}]/ 현재가: {current_price}/ 수익률: {profit_rate:.2f}% / ema20: {last_ema20:,.2f}")
