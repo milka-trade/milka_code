@@ -432,7 +432,6 @@ def trade_sell(ticker):
                 attempts += 1  # 조회 횟수 증가
                 
             if profit_rate >= 0.7 :
-                if last_ema20 < current_price :
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
                     send_discord_message(f"[매도시도 초과]: [{ticker}]/ 현재가: {current_price}/ 수익률: {profit_rate:.2f}% / ema20: {last_ema20:,.2f}")
                     return sell_order   
