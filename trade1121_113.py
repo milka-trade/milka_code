@@ -402,9 +402,9 @@ def trade_sell(ticker):
     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
     last_ema20 = get_ema(ticker, 20).iloc[-1]    #20봉 지수이동평균 계산
 
-    selltime = datetime.now()
-    sell_start = selltime.replace(hour=8, minute=50 , second=00, microsecond=0)
-    sell_end = selltime.replace(hour=8, minute=59, second=50, microsecond=0)
+    # selltime = datetime.now()
+    # sell_start = selltime.replace(hour=8, minute=50 , second=00, microsecond=0)
+    # sell_end = selltime.replace(hour=8, minute=59, second=50, microsecond=0)
 
     max_attempts = 30  # 최대 조회 횟수
     attempts = 0  # 현재 조회 횟수
@@ -432,6 +432,7 @@ def trade_sell(ticker):
                 attempts += 1  # 조회 횟수 증가
                 
             if profit_rate >= 0.7 :
+                if last_ema20 < current_price :
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
                     send_discord_message(f"[매도시도 초과]: [{ticker}]/ 현재가: {current_price:,.2f}/ 수익률: {profit_rate:.2f}% / ema20: {last_ema20:,.2f}")
                     return sell_order   
