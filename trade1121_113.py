@@ -198,8 +198,8 @@ def get_dynamic_threshold(tickers):
 def get_bollinger_band_lower(ticker, window=20, std_dev=2):
     """특정 티커의 볼린저 밴드 하단값을 가져오는 함수"""
     # 15분 봉 데이터 가져오기
-    df = load_ohlcv(ticker)
-    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200)
+    # df = load_ohlcv(ticker)
+    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=30)
     if df is None or df.empty:
         return None  # 데이터가 없으면 None 반환
 
@@ -273,6 +273,9 @@ def filtered_tickers(tickers, held_coins):
             pre_ha_close = ha_df['HA_Close'].iloc[-2]
             last_ha_close = ha_df['HA_Close'].iloc[-1]
             last_ha_open = ha_df['HA_Open'].iloc[-1] 
+            
+            # 볼린저 밴드 저가
+            BolB = get_bollinger_band_lower(t)
 
             # if value_240 >3_000_000_000 :  
             #     print(f"cond 1: {t} / [value] : {value_240:,.0f} > 10십억")
