@@ -239,9 +239,9 @@ def filtered_tickers(tickers, held_coins):
             continue
 
         try:
-            # df_day = pyupbit.get_ohlcv(t, interval="day", count=3)  
-            # if df_day is None or df_day.empty or 'high' not in df_day or 'low' not in df_day or 'open' not in df_day:
-            #     continue  
+            df_day = pyupbit.get_ohlcv(t, interval="day", count=3)  
+            if df_day is None or df_day.empty or 'high' not in df_day or 'low' not in df_day or 'open' not in df_day:
+                continue  
             
             df_15 = pyupbit.get_ohlcv(t, interval="minute15", count=2)
             df_240 = pyupbit.get_ohlcv(t, interval="minute240", count=3)  
@@ -250,7 +250,7 @@ def filtered_tickers(tickers, held_coins):
             
             cur_price = pyupbit.get_current_price(t)
                       
-            # day_open_price_1 = df_day['open'].iloc[-1]  #9시 기준 당일 시가
+            day_open_price_1 = df_day['open'].iloc[-1]  #9시 기준 당일 시가
             # day_value_1 = df_day['value'].iloc[-1]
             m240_open = df_240['open'].iloc[-1] 
             value_240 = df_240['value'].iloc[-1]
@@ -295,7 +295,8 @@ def filtered_tickers(tickers, held_coins):
             if threshold_value < atr :
                 # print(f"[cond 1]: {t} / [임계치] : {threshold_value:,.0f} < [변동폭] : {atr:,.0f}")
 
-                if df_15_open <= cur_price < df_15_open * 1.05:                                    
+                if df_15_open <= cur_price < day_open_price_1 * 1.1:                                    
+                    # print(f"[cond 2]: [{t}] 15봉:{df_15_open:,.2f} < 현재가:{cur_price:,.2f} < 현재가 5%: {day_open_price_1 * 1.1:,.2f}")
 
                     if pre_ema200 < last_ema200 < last_ha_close :
                         # print(f"[cond 3]: [{t}] ema2:{pre_ema200:,.2f} < ema1:{last_ema200:,.2f} < candle : {last_ha_close:,.2f}")
@@ -303,17 +304,17 @@ def filtered_tickers(tickers, held_coins):
                         if last_ta_rsi < 65 :
                             # print(f"[cond 4]: [{t}] RSI:{last_ta_rsi:,.2f} < 65")    
 
+                            # if BolB_increasing :
+                            #         print(f"[cond 6]: {t} / [볼린저밴드 증가여부] : {BolB_increasing}")
+                            #         send_discord_message(f"[cond 6]: {t} / [볼린저밴드 증가여부] : {BolB_increasing}")
+
                             if 0 < previous_ta_srsi < last_ta_srsi <= 0.2:
                                 print(f"[cond 5]: [{t}] 0 < pre s_RSI: {previous_ta_srsi:,.2f} < last s_RSI:{last_ta_srsi:,.2f} <= 0.2")   
                                 send_discord_message(f"[cond 5]: [{t}] 0 < pre s_RSI: {previous_ta_srsi:,.2f} < last s_RSI:{last_ta_srsi:,.2f} <= 0.2")
                                       
-                                if BolB_increasing :
-                                    print(f"[cond 6]: {t} / [볼린저밴드 증가여부] : {BolB_increasing}")
-                                    send_discord_message(f"[cond 6]: {t} / [볼린저밴드 증가여부] : {BolB_increasing}")
-   
-                                    if cur_price < last_ema20:
-                                        print(f"[cond 7]: {t} / [현재가]: {cur_price:,.2f} < [ema20]: {last_ema20:,.2f}")
-                                        send_discord_message(f"[cond 7]: {t} / [현재가]: {cur_price:,.2f} < [ema20]: {last_ema20:,.2f}")
+                                if cur_price < last_ema20:
+                                        print(f"[cond 6]: {t} / [현재가]: {cur_price:,.2f} < [ema20]: {last_ema20:,.2f}")
+                                        send_discord_message(f"[cond 6]: {t} / [현재가]: {cur_price:,.2f} < [ema20]: {last_ema20:,.2f}")
                                         filtered_tickers.append(t)
             
         except Exception as e:
