@@ -315,9 +315,9 @@ def filtered_tickers(tickers, held_coins):
                                 send_discord_message(f"[cond 5]: [{t}] 0 < pre s_RSI: {previous_ta_srsi:,.2f} < last s_RSI:{last_ta_srsi:,.2f} <= 0.2")
                                       
                                 if cur_price < last_ema20:
-                                        print(f"[cond 6]: {t} / [현재가]: {cur_price:,.2f} < [ema20]: {last_ema20:,.2f}")
-                                        send_discord_message(f"[cond 6]: {t} / [현재가]: {cur_price:,.2f} < [ema20]: {last_ema20:,.2f}")
-                                        filtered_tickers.append(t)
+                                    print(f"[cond 6]: {t} / [현재가]: {cur_price:,.2f} < [ema20]: {last_ema20:,.2f}")
+                                    send_discord_message(f"[cond 6]: {t} / [현재가]: {cur_price:,.2f} < [ema20]: {last_ema20:,.2f}")
+                                    filtered_tickers.append(t)
             
         except Exception as e:
             send_discord_message(f"filtered_tickers/Error processing ticker {t}: {e}")
@@ -459,7 +459,6 @@ def trade_sell(ticker):
                 attempts += 1  # 조회 횟수 증가
                 
             if profit_rate >= 0.7 :
-                print(f'[30회/수익률 0.7이상]: [{ticker}] / ema20:{last_ema20} / 현재가: {current_price}')
                 # if last_ema20 < current_price :
                 if upper_Band < current_price :
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
