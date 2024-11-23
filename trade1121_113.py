@@ -281,24 +281,26 @@ def filtered_tickers(tickers, held_coins):
             #     print(f"cond 1: {t} / [value] : {value_240:,.0f} > 10십억")
 
             if threshold_value < atr :
-                    # print(f"cond 2: {t} / [임계치] : {threshold_value:,.0f} < [변동폭] : {atr:,.0f}")
+                    # print(f"[cond 1]: {t} / [임계치] : {threshold_value:,.0f} < [변동폭] : {atr:,.0f}")
                     
                     if pre_ema200 < last_ema200 < last_ha_close : 
-                            # print(f"[cond 3]: [{t}] ema2:{pre_ema200:,.2f} < ema1:{last_ema200:,.2f} < candle : {last_ha_close:,.2f}")
+                            # print(f"[cond 2: [{t}] ema2:{pre_ema200:,.2f} < ema1:{last_ema200:,.2f} < candle : {last_ha_close:,.2f}")
                         
                         # if last_ha_open < last_ha_close:
-                            # print(f"[cond 4]: [{t}] candle_open:{last_ha_open:,.1f} < candle_close:{last_ha_close:,.1f}")
+                            # print(f"[cond 3]: [{t}] candle_open:{last_ha_open:,.1f} < candle_close:{last_ha_close:,.1f}")
                         
                             if 0 < previous_ta_srsi < last_ta_srsi <= 0.2:
-                                print(f"[cond 5]: [{t}] 0 < pre s_RSI: {previous_ta_srsi:,.2f} < last s_RSI:{last_ta_srsi:,.2f} <= 0.2")   
+                                print(f"[cond 4]: [{t}] 0 < pre s_RSI: {previous_ta_srsi:,.2f} < last s_RSI:{last_ta_srsi:,.2f} <= 0.2")   
                                 send_discord_message(f"[cond 5]: [{t}] 0 < pre s_RSI: {previous_ta_srsi:,.2f} < last s_RSI:{last_ta_srsi:,.2f} <= 0.2")
     
                                 if last_ta_rsi < 65 :
-                                    print(f"[cond 6]: [{t}] RSI:{last_ta_rsi:,.2f} < 65")    
+                                    print(f"[cond 5]: [{t}] RSI:{last_ta_rsi:,.2f} < 65")    
 
                                     if df_15_open <= cur_price < df_15_open * 1.05:
+                                        # print(f"[cond 6]: [{t}] df15:{df_15_open} < price:{cur_price} < df15*1.05:{df_15_open*1.05}")
                                         
                                         if last_ema20 > cur_price :
+                                            print(f"[cond7]: [{t}] ema20:{last_ema20:,.2f} > price:{cur_price:,.2f}")
                                             
                                             filtered_tickers.append(t)
             
@@ -528,7 +530,7 @@ def buying_logic():
                     if best_ticker:
                         buy_time = datetime.now().strftime('%m/%d %H:%M:%S')  # 시작시간 기록
                         # print(f"선정코인 : {best_ticker} / k값 : {best_k:,.2f} / 수익률 : {interest:,.2f}")
-                        send_discord_message( f"{buy_time} [선정코인] : {best_ticker} / k값 : {best_k:,.2f} / 수익률 : {interest:,.2f}")
+                        send_discord_message( f"[{buy_time}] [선정코인] : {best_ticker} / k값 : {best_k:,.2f} / 수익률 : {interest:,.2f}")
                         result = trade_buy(best_ticker, best_k)
                         if result:  # 매수 성공 여부 확인
                             time.sleep(30)
