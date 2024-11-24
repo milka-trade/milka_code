@@ -312,7 +312,7 @@ def filtered_tickers(tickers, held_coins):
 
                                 if cur_price < last_ema20 * 0.99:
                                     print(f"[cond 6]: [{t}] / [현재가]: {cur_price:,.2f} < [ema20]: {last_ema20 * 0.99:,.2f}")
-                                    send_discord_message(f"[cond 6]: [{t}] / [현재가]: {cur_price:,.2f} < [ema20]: {last_ema20:,.2f}")
+                                    send_discord_message(f"[cond 6]: [{t}] / [현재가]: {cur_price:,.2f} < [ema20]: {last_ema20 * 0.99:,.2f}")
                                     filtered_tickers.append(t)
             
         except Exception as e:
