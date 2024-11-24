@@ -449,7 +449,7 @@ def trade_sell(ticker):
                     
                 print(f"{ticker} / [시도 {attempts + 1} / {max_attempts}] / 현재가: {current_price:,.2f} 수익률: {profit_rate:.2f}% ")
                     
-                if profit_rate >= 1.1:
+                if profit_rate >= 1.5:
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
                     send_discord_message(f"[목표가 달성]: {ticker} / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
                     return sell_order
@@ -458,9 +458,9 @@ def trade_sell(ticker):
                     time.sleep(0.5)  # 짧은 대기                
                 attempts += 1  # 조회 횟수 증가
                 
-            if profit_rate >= 0.65 :
-                # if last_ema20 < current_price :
-                if upper_Band < current_price :
+            if profit_rate >= 0.7 :
+                if last_ema20*1.005 < current_price :
+                # if upper_Band < current_price :
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
                     # send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / ema20: {last_ema20:,.2f} < {current_price:,.2f} ")
                     send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / upper_band: {upper_Band:,.2f} < {current_price:,.2f} ")
