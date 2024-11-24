@@ -297,7 +297,7 @@ def filtered_tickers(tickers, held_coins):
             if threshold_value < atr :
                 # print(f"[cond 1]: {t} / [임계치] : {threshold_value:,.0f} < [변동폭] : {atr:,.0f}")
 
-                if df_15_open <= cur_price < day_open_price_1 * 1.1:                                    
+                if df_15_open <= cur_price < day_open_price_1 * 1.07:                                    
                     # print(f"[cond 2]: [{t}] 15봉:{df_15_open:,.2f} < 현재가:{cur_price:,.2f} < 현재가 5%: {day_open_price_1 * 1.1:,.2f}")
 
                     if pre_ema200 < last_ema200 < last_ha_close :
@@ -449,7 +449,7 @@ def trade_sell(ticker):
                     
                 print(f"{ticker} / [시도 {attempts + 1} / {max_attempts}] / 현재가: {current_price:,.2f} 수익률: {profit_rate:.2f}% ")
                     
-                if profit_rate >= 3:
+                if profit_rate >= 1.1:
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
                     send_discord_message(f"[목표가 달성]: {ticker} / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
                     return sell_order
@@ -458,7 +458,7 @@ def trade_sell(ticker):
                     time.sleep(0.5)  # 짧은 대기                
                 attempts += 1  # 조회 횟수 증가
                 
-            if profit_rate >= 0.7 :
+            if profit_rate >= 0.65 :
                 # if last_ema20 < current_price :
                 if upper_Band < current_price :
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
