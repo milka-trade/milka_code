@@ -223,12 +223,12 @@ def get_bollinger_band(ticker, window=20, std_dev=2):
     is_increasing = all(recent_band_widths.iloc[i] < recent_band_widths.iloc[i + 1] for i in range(len(recent_band_widths) - 1))
 
     # 마지막 하단 밴드 값 반환
-    # lower_band_value = df['Lower_Band'].iloc[-1]
+    lower_band_value = df['Lower_Band'].iloc[-1]
     # 마지막 상단 밴드 값 반환
-    upper_band_value = df['Upper_Band'].iloc[-1]
+    # upper_band_value = df['Upper_Band'].iloc[-1]
 
     # 밴드폭 증가 여부 반환
-    return upper_band_value
+    return lower_band_value
 
 def filtered_tickers(tickers, held_coins):
     """특정 조건에 맞는 티커 필터링"""
@@ -292,7 +292,7 @@ def filtered_tickers(tickers, held_coins):
             last_ha_open = ha_df['HA_Open'].iloc[-1] 
             
             # 볼린저 밴드 저가
-            BolB_increasing = get_bollinger_band(t)
+            Low_Bol = get_bollinger_band(t)
 
             if threshold_value < atr :
                 # print(f"[cond 1]: {t} / [임계치] : {threshold_value:,.0f} < [변동폭] : {atr:,.0f}")
@@ -310,9 +310,11 @@ def filtered_tickers(tickers, held_coins):
                             if last_ta_rsi < 65 :
                                 print(f"[cond 5]: [{t}] [RSI]:{last_ta_rsi:,.2f} < 65")    
 
-                                if cur_price < last_ema20 * 0.99:
-                                    print(f"[cond 6]: [{t}] / [현재가]: {cur_price:,.2f} < [ema20*0.99]: {last_ema20 * 0.99:,.2f}")
-                                    send_discord_message(f"[cond 6]: [{t}] / [현재가]: {cur_price:,.2f} < [ema20*0.99]: {last_ema20 * 0.99:,.2f}")
+                                if cur_price < Low_Bol * 1.01:
+                                    # print(f"[cond 6]: [{t}] / [현재가]: {cur_price:,.2f} < [ema20*0.99]: {last_ema20 * 0.99:,.2f}")
+                                    print(f"[cond 6]: [{t}] / [현재가]: {cur_price:,.2f} < [LowBol*1.01]: {Low_Bol * 1.01:,.2f}")
+                                    # send_discord_message(f"[cond 6]: [{t}] / [현재가]: {cur_price:,.2f} < [ema20*0.99]: {last_ema20 * 0.99:,.2f}")
+                                    send_discord_message(f"[cond 6]: [{t}] / [현재가]: {cur_price:,.2f} < [LowBol*1.01]: {Low_Bol * 1.01:,.2f}")
                                     filtered_tickers.append(t)
             
         except Exception as e:
