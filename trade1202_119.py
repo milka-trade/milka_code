@@ -516,13 +516,19 @@ def trade_sell(ticker):
     attempts = 0  # 현재 조회 횟수
     
     if sell_start <= selltime <= sell_end:      # 매도 제한시간이면
-        if profit_rate >= 0.3 and last_ema20 < current_price :
+        if profit_rate >= 0.3 and upper_band * 0.99 <= current_price :
             sell_order = upbit.sell_limit_order(ticker, buyed_amount, current_price)
-            # sell_order = upbit.sell_market_order(ticker, buyed_amount)
-            send_discord_message(f"[장시작전 매도]: [{ticker}]/ 현재가: {current_price}/ 수익률: {profit_rate:,.2f}% / ema20: {last_ema20:,.2f}")
-        
+            # 매도 주문의 결과 확인
+            order_id = sell_order['uuid']  # 주문 ID 저장
+            order_info = upbit.get_order(order_id)  # 주문 정보 조회
+    
+            # 주문이 체결되었는지 확인
+            if order_info['state'] == 'done':  # 'done' 상태 확인
+                # send_discord_message(f"[보합 / 장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / ema20: {last_ema20:,.2f} < {current_price:,.2f} ")
+                send_discord_message(f"[보합 / 장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {upper_band * 0.99:,.2f}")
+                           
     else:
-        if profit_rate >= 0.3:  
+        if profit_rate >= 0.5:  
             while attempts < max_attempts:
                 current_price = pyupbit.get_current_price(ticker)  # 현재 가격 재조회
                 profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
@@ -547,9 +553,9 @@ def trade_sell(ticker):
                     time.sleep(0.5)  # 짧은 대기                
                 attempts += 1  # 조회 횟수 증가
                 
-            if profit_rate >= 0.3 :
+            if profit_rate >= 0.7 :
                 # if last_ema20 < current_price :
-                if upper_band <= current_price * 0.99 :
+                if upper_band * 0.99 <= current_price :
                     # sell_order = upbit.sell_market_order(ticker, buyed_amount)
                     sell_order = upbit.sell_limit_order(ticker, buyed_amount, current_price)
 
@@ -626,7 +632,7 @@ def buying_logic():
     restricted_start_hour = 8
     restricted_start_minute = 40
     restricted_end_hour = 9
-    restricted_end_minute = 5
+    restricted_end_minute = 15
 
     while True:
         try:
