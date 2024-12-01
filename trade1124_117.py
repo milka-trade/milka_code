@@ -310,11 +310,11 @@ def filtered_tickers(tickers, held_coins):
                             if last_ta_rsi < 65 :
                                 print(f"[cond 5]: [{t}] [RSI]:{last_ta_rsi:,.2f} < 65")    
 
-                                if cur_price < Low_Bol * 1.01:
+                                if cur_price < Low_Bol * 1.005:
                                     # print(f"[cond 6]: [{t}] / [현재가]: {cur_price:,.2f} < [ema20*0.99]: {last_ema20 * 0.99:,.2f}")
-                                    print(f"[cond 6]: [{t}] / [현재가]: {cur_price:,.2f} < [LowBol*1.01]: {Low_Bol * 1.01:,.2f}")
+                                    print(f"[cond 6]: [{t}] / [현재가]: {cur_price:,.2f} < [LowBol*1.005]: {Low_Bol * 1.005:,.2f}")
                                     # send_discord_message(f"[cond 6]: [{t}] / [현재가]: {cur_price:,.2f} < [ema20*0.99]: {last_ema20 * 0.99:,.2f}")
-                                    send_discord_message(f"[cond 6]: [{t}] / [현재가]: {cur_price:,.2f} < [LowBol*1.01]: {Low_Bol * 1.01:,.2f}")
+                                    send_discord_message(f"[cond 6]: [{t}] / [현재가]: {cur_price:,.2f} < [LowBol*1.005]: {Low_Bol * 1.005:,.2f}")
                                     filtered_tickers.append(t)
             
         except Exception as e:
@@ -457,11 +457,11 @@ def trade_sell(ticker):
                 attempts += 1  # 조회 횟수 증가
                 
             if profit_rate >= 0.7 :
-                if last_ema20*1.007 < current_price :
+                if last_ema20*1.01 < current_price :
                 # if upper_Band < current_price :
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
                     # send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / ema20: {last_ema20:,.2f} < {current_price:,.2f} ")
-                    send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / ema20*1.007: {last_ema20 * 1.007:,.2f} < {current_price:,.2f} ")
+                    send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / ema20*1.01: {last_ema20 * 1.01:,.2f} < {current_price:,.2f} ")
                     return sell_order   
             else:
                 return None
