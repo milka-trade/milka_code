@@ -197,41 +197,6 @@ def get_dynamic_threshold(tickers):
 
     return np.median(atr_values) if atr_values else 0.05  # Fallback to 0.05 if no ATR values
 
-def get_bollinger_band(ticker, window=20, std_dev=2):
-    """특정 티커의 볼린저 밴드 하단값을 가져오는 함수"""
-    # 15분 봉 데이터 가져오기
-    # df = load_ohlcv(ticker)
-    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=30)
-    if df is None or df.empty:
-        return None  # 데이터가 없으면 None 반환
-
-    # 이동 평균과 표준 편차 계산
-    df['MA'] = df['close'].rolling(window=window).mean()
-    df['STD'] = df['close'].rolling(window=window).std()
-
-    # 볼린저 밴드 계산
-    df['Upper_Band'] = df['MA'] + (df['STD'] * std_dev)
-    df['Lower_Band'] = df['MA'] - (df['STD'] * std_dev)
-
-    # 밴드 폭 계산
-    df['Band_Width'] = df['Upper_Band'] - df['Lower_Band']
-
-    # 밴드 폭 변화량 계산
-    # df['Width_Change'] = df['Band_Width'].diff()
-    # df['Increasing_Band_Width'] = df['Width_Change'] > 0  # 폭이 증가할 때 True
-
-    # 최근 3개 밴드 폭 데이터가 증가하는지 확인
-    recent_band_widths = df['Band_Width'].tail(4)  # 최근 4개 데이터 (현재 포함)
-    is_increasing = all(recent_band_widths.iloc[i] < recent_band_widths.iloc[i + 1] for i in range(len(recent_band_widths) - 1))
-
-    # 마지막 하단 밴드 값 반환
-    lower_band_value = df['Lower_Band'].iloc[-1]
-    # 마지막 상단 밴드 값 반환
-    # upper_band_value = df['Upper_Band'].iloc[-1]
-
-    # 밴드폭 증가 여부 반환
-    return lower_band_value
-
 def get_bollinger_upper_band(ticker, window=20, std_dev=2):
     """특정 티커의 볼린저 밴드 상단값을 가져오는 함수"""
     df = pyupbit.get_ohlcv(ticker, interval="minute15", count=30)
