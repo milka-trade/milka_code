@@ -383,15 +383,18 @@ def filtered_tickers(tickers, held_coins):
                             if last_ta_rsi < 65 :
                                 print(f"[cond 5]: [{t}] [RSI]:{last_ta_rsi:,.2f} < 65")    
 
-                                # 볼린저 밴드 하단 터치 / 볼린더 상 하단 폭이 3% 이상
-                                if df_15_low1 < Low_Bol or df_15_low2 < Low_Bol:
-                                    send_discord_message(f"[cond 6]: [{t}] / [15분봉-1]: {df_15_low1:,.2f} or [15분봉-2]: {df_15_low2:,.2f} < [LowBol]: {Low_Bol:,.2f}")
-
-                                    if Low_Bol * 1.03 < Up_Bol :
-                                        send_discord_message(f"[cond 7]: [{t}] [볼밴 하단]: {Low_Bol * 1.03 :,.2f} < [볼밴 상단]: {Up_Bol:,.2f}/")
+                                if Low_Bol * 1.03 < Up_Bol :
+                                    print(f"[cond 6]: [{t}] [볼밴 하단]: {Low_Bol * 1.03 :,.2f} < [볼밴 상단]: {Up_Bol:,.2f}")
+                                    send_discord_message(f"[cond 6]: [{t}] [볼밴 하단]: {Low_Bol * 1.03 :,.2f} < [볼밴 상단]: {Up_Bol:,.2f}")
+                                        
+                                    # 볼린저 밴드 하단 터치 / 볼린더 상 하단 폭이 3% 이상
+                                    if df_15_low1 < Low_Bol*1.01 or df_15_low2 < Low_Bol*1.01:
+                                        send_discord_message(f"[cond 7]: [{t}] / [15분봉-1]: {df_15_low1:,.2f} or [15분봉-2]: {df_15_low2:,.2f} < [LowBol]: {Low_Bol * 1.01:,.2f}")
+                                        print(f"[cond 7]: [{t}] / [15분봉-1]: {df_15_low1:,.2f} or [15분봉-2]: {df_15_low2:,.2f} < [LowBol]: {Low_Bol * 1.01:,.2f}")
 
                                         if df_15_open < cur_price :
                                             send_discord_message(f"[cond 8]: [{t}] 15봉 양봉")
+                                            print(f"[cond 8]: [{t}] 15봉 양봉")
 
                                             ai_decision = get_ai_decision(t)  
                                             send_discord_message(f"[cond 9]: [{t}] AI: {ai_decision}")
@@ -506,7 +509,7 @@ def trade_sell(ticker):
     current_price = pyupbit.get_current_price(ticker)
     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
     last_ema20 = get_ema(ticker, 20).iloc[-1]    #20봉 지수이동평균 계산
-    upper_band = get_bollinger_upper_band(ticker)
+    upper_band = get_bollinger_upper_band(ticker).iloc[-1]
 
     selltime = datetime.now()
     sell_start = selltime.replace(hour=8, minute=30 , second=00, microsecond=0)
@@ -517,15 +520,11 @@ def trade_sell(ticker):
     
     if sell_start <= selltime <= sell_end:      # 매도 제한시간이면
         if profit_rate >= 0.3 and upper_band * 0.99 <= current_price :
-            sell_order = upbit.sell_limit_order(ticker, buyed_amount, current_price)
-            # 매도 주문의 결과 확인
-            order_id = sell_order['uuid']  # 주문 ID 저장
-            order_info = upbit.get_order(order_id)  # 주문 정보 조회
-    
-            # 주문이 체결되었는지 확인
-            if order_info['state'] == 'done':  # 'done' 상태 확인
-                # send_discord_message(f"[보합 / 장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / ema20: {last_ema20:,.2f} < {current_price:,.2f} ")
-                send_discord_message(f"[보합 / 장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {upper_band * 0.99:,.2f}")
+            sell_order = upbit.sell_market_order(ticker, buyed_amount)
+            # sell_order = upbit.sell_limit_order(ticker, buyed_amount, current_price)
+            # send_discord_message(f"[보합 / 장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / ema20: {last_ema20:,.2f} < {current_price:,.2f} ")
+            print(f"[보합 / 장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {upper_band * 0.99:,.2f}")
+            send_discord_message(f"[보합 / 장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {upper_band * 0.99:,.2f}")
                            
     else:
         if profit_rate >= 0.5:  
@@ -534,19 +533,13 @@ def trade_sell(ticker):
                 profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
                     
                 # print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 현재가: {current_price:,.2f} 수익률: {profit_rate:.2f}% ")
-                send_discord_message(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 현재가: {current_price:,.2f} 수익률: {profit_rate:.2f}%") 
+                print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 현재가: {current_price:,.2f} 수익률: {profit_rate:.2f}%") 
                     
-                if profit_rate >= 2.5:
-                    # sell_order = upbit.sell_market_order(ticker, buyed_amount)
-                    sell_order = upbit.sell_limit_order(ticker, buyed_amount, current_price)
-
-                    # 매도 주문의 결과 확인
-                    order_id = sell_order['uuid']  # 주문 ID 저장
-                    order_info = upbit.get_order(order_id)  # 주문 정보 조회
-    
-                    # 주문이 체결되었는지 확인
-                    if order_info['state'] == 'done':  # 'done' 상태 확인
-                        send_discord_message(f"[!!목표가 매도 성공!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
+                if profit_rate >= 1.5:
+                    sell_order = upbit.sell_market_order(ticker, buyed_amount)
+                    # sell_order = upbit.sell_limit_order(ticker, buyed_amount, current_price)
+                    print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
+                    send_discord_message(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
                     return sell_order
 
                 else:
@@ -556,17 +549,12 @@ def trade_sell(ticker):
             if profit_rate >= 0.7 :
                 # if last_ema20 < current_price :
                 if upper_band * 0.99 <= current_price :
-                    # sell_order = upbit.sell_market_order(ticker, buyed_amount)
-                    sell_order = upbit.sell_limit_order(ticker, buyed_amount, current_price)
+                    sell_order = upbit.sell_market_order(ticker, buyed_amount)
+                    # sell_order = upbit.sell_limit_order(ticker, buyed_amount, current_price)
 
-                    # 매도 주문의 결과 확인
-                    order_id = sell_order['uuid']  # 주문 ID 저장
-                    order_info = upbit.get_order(order_id)  # 주문 정보 조회
-    
-                    # 주문이 체결되었는지 확인
-                    if order_info['state'] == 'done':  # 'done' 상태 확인
-                        # send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / ema20: {last_ema20:,.2f} < {current_price:,.2f} ")
-                        send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {upper_band * 0.99:,.2f}")
+                    # send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / ema20: {last_ema20:,.2f} < {current_price:,.2f} ")
+                    send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {upper_band * 0.99:,.2f}")
+                    print(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {upper_band * 0.99:,.2f}")
                     return sell_order   
             else:
                 return None
