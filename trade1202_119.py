@@ -549,8 +549,9 @@ def trade_sell(ticker):
             if profit_rate >= 0.7 :
                 # if last_ema20 < current_price :
                 if upper_band * 0.99 <= current_price :
-                    sell_order = upbit.sell_market_order(ticker, buyed_amount)
-                    # sell_order = upbit.sell_limit_order(ticker, buyed_amount, current_price)
+                    sell_price = upbit.get_current_price(ticker)
+                    # sell_order = upbit.sell_market_order(ticker, buyed_amount)
+                    sell_order = upbit.sell_limit_order(ticker, buyed_amount, sell_price)
 
                     # send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / ema20: {last_ema20:,.2f} < {current_price:,.2f} ")
                     send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {upper_band * 0.99:,.2f}")
