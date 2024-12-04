@@ -534,7 +534,7 @@ def trade_sell(ticker):
                 # print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 현재가: {current_price:,.2f} 수익률: {profit_rate:.2f}% ")
                 print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 현재가: {current_price:,.2f} 수익률: {profit_rate:.2f}%") 
                     
-                if profit_rate >= 1.5:
+                if profit_rate >= 2:
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
                     # sell_order = upbit.sell_limit_order(ticker, buyed_amount, current_price)
                     print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
@@ -547,14 +547,14 @@ def trade_sell(ticker):
                 
             if profit_rate >= 1 :
                 # if last_ema20 < current_price :
-                if upper_band * 0.99 <= current_price :
-                    sell_price = pyupbit.get_current_price(ticker)
-                    # sell_order = upbit.sell_market_order(ticker, buyed_amount)
-                    sell_order = upbit.sell_limit_order(ticker, buyed_amount, sell_price)
+                if upper_band * 0.995 <= current_price :
+                    # sell_price = pyupbit.get_current_price(ticker)
+                    sell_order = upbit.sell_market_order(ticker, buyed_amount)
+                    # sell_order = upbit.sell_limit_order(ticker, buyed_amount, sell_price)
 
                     # send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / ema20: {last_ema20:,.2f} < {current_price:,.2f} ")
-                    send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {upper_band * 0.99:,.2f}")
-                    print(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {upper_band * 0.99:,.2f}")
+                    send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / current_price < upper_Band_99.5%")
+                    print(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / current_price < upper_Band_99.5%")
                     return sell_order   
             else:
                 return None
