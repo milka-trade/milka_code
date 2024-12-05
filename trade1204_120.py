@@ -391,14 +391,14 @@ def filtered_tickers(tickers, held_coins):
                                         send_discord_message(f"[cond 7]: [{t}] / 15분봉이 볼린저밴드 하단 0.5%부분 터치")
                                         print(f"[cond 7]: [{t}] 15분봉이 볼린저밴드 하단 0.5%부분 터치")
 
-                                        if df_15_open < cur_price :
-                                            send_discord_message(f"[cond 8]: [{t}] 15봉 양봉")
-                                            print(f"[cond 8]: [{t}] 15봉 양봉")
+                                        # if df_15_open < cur_price :
+                                        #     send_discord_message(f"[cond 8]: [{t}] 15봉 양봉")
+                                        #     print(f"[cond 8]: [{t}] 15봉 양봉")
 
-                                            ai_decision = get_ai_decision(t)  
-                                            send_discord_message(f"[cond 9]: [{t}] AI: {ai_decision}")
-                                            if ai_decision == "BUY" :
-                                                filtered_tickers.append(t)
+                                        ai_decision = get_ai_decision(t)  
+                                        send_discord_message(f"[cond 8]: [{t}] AI: {ai_decision}")
+                                        if ai_decision == "BUY" :
+                                            filtered_tickers.append(t)
             
         except Exception as e:
             send_discord_message(f"filtered_tickers/Error processing ticker {t}: {e}")
@@ -545,7 +545,7 @@ def trade_sell(ticker):
                     time.sleep(0.5)  # 짧은 대기                
                 attempts += 1  # 조회 횟수 증가
                 
-            if profit_rate >= 1 :
+            if profit_rate >= 0.5 :
                 # if last_ema20 < current_price :
                 if upper_band * 0.995 <= current_price :
                     # sell_price = pyupbit.get_current_price(ticker)
