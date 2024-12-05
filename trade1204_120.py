@@ -378,14 +378,14 @@ def filtered_tickers(tickers, held_coins):
                     
                         if 0 < previous_ta_srsi < last_ta_srsi <= 0.2:
                             print(f"[cond 4]: [{t}] 0 < [pre s_RSI]: {previous_ta_srsi:,.2f} < [last s_RSI]:{last_ta_srsi:,.2f} <= 0.2")   
-                            send_discord_message(f"[cond 5]: [{t}] 0 < [pre s_RSI]: {previous_ta_srsi:,.2f} < [last s_RSI]:{last_ta_srsi:,.2f} <= 0.2")
+                            # send_discord_message(f"[cond 5]: [{t}] 0 < [pre s_RSI]: {previous_ta_srsi:,.2f} < [last s_RSI]:{last_ta_srsi:,.2f} <= 0.2")
 
                             if last_ta_rsi < 65 :
                                 print(f"[cond 5]: [{t}] [RSI]:{last_ta_rsi:,.2f} < 65")    
 
                                 if Low_Bol * 1.03 < Up_Bol :
                                     print(f"[cond 6]: [{t}] 볼린저밴드 상하단 폭 3% 이상")
-                                    send_discord_message(f"[cond 6]: [{t}] 볼린저밴드 상하단 폭 3% 이상")
+                                    # send_discord_message(f"[cond 6]: [{t}] 볼린저밴드 상하단 폭 3% 이상")
                                         
                                     if df_15_low1 < Low_Bol*1.005 or df_15_low2 < Low_Bol*1.005:
                                         send_discord_message(f"[cond 7]: [{t}] / 15분봉이 볼린저밴드 하단 0.5%부분 터치")
