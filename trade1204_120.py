@@ -370,7 +370,7 @@ def filtered_tickers(tickers, held_coins):
             if threshold_value < atr :
                 # print(f"[cond 1]: {t} / [임계치] : {threshold_value:,.0f} < [변동폭] : {atr:,.0f}")
 
-                if cur_price < day_open_price_1 * 1.07:                                    
+                if cur_price < day_open_price_1 * 1.03:                                    
                     # print(f"[cond 2]: [{t}] 15봉:{df_15_open:,.2f} < 현재가:{cur_price:,.2f} < 현재가 5%: {day_open_price_1 * 1.1:,.2f}")
 
                     if pre_ema200 < last_ema200 < last_ha_close :
