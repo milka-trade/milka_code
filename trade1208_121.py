@@ -256,11 +256,11 @@ def get_ai_decision(ticker):
                     },
                     {
                 "type": "text",
-                "text": "you analyze the Bollinger Bands indicator based on the cryptocurrency's chart data and look for coins that have dropped below the lower Bollinger Band."
+                "text": "Specifically, based on the given data, you analyze the Bollinger Bands indicator based on the cryptocurrency's chart data."
                     },
                     {
                 "type": "text",
-                "text": "Specifically, based on the given data, if your comprehensive reasoning predicts that the cryptocurrency's price will bounce off the bottom of the Bollinger Bands within an hour and increase by more than 1.02x in the future, you will give a buy signal; otherwise, if you predict that the cryptocurrency's price will fall further from the bottom of the Bollinger Bands, you will give a sell signal."
+                "text": "If your comprehensive reasoning predicts that the cryptocurrency's price will bounce off the bottom of the Bollinger Bands and increase by more than 1.02x within hours, you will give a 'BUY' signal; otherwise, if you predict that the cryptocurrency's price will fall further within hours, you will give a 'SELL' signal."
                     },
                     {
                 "type": "text",
@@ -384,12 +384,12 @@ def filtered_tickers(tickers, held_coins):
                                     # send_discord_message(f"[cond 6]: [{t}] 볼린저밴드 상하단 폭 3% 이상")
                                         
                                     if df_15_low1 < Low_Bol*1.005:
-                                        # send_discord_message(f"[cond 7]: [{t}] / 15분봉이 볼린저밴드 하단 0.5%부분 터치")
                                         print(f"[cond 7]: [{t}] 15분봉이 볼린저밴드 하단 0.5%부분 터치")
+                                        # send_discord_message(f"[cond 7]: [{t}] / 15분봉이 볼린저밴드 하단 0.5%부분 터치")
 
                                         if df_15_open < cur_price :
-                                            # send_discord_message(f"[cond 8]: [{t}] 15봉 양봉")
                                             print(f"[cond 8]: [{t}] 15봉 양봉")
+                                            send_discord_message(f"[cond 8]: [{t}] 15봉 양봉")
 
                                             ai_decision = get_ai_decision(t)  
                                             send_discord_message(f"[cond 8]: [{t}] AI: {ai_decision}")
@@ -547,8 +547,8 @@ def trade_sell(ticker):
                 # sell_order = upbit.sell_limit_order(ticker, buyed_amount, sell_price)
 
                 # send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / ema20: {last_ema20:,.2f} < {current_price:,.2f} ")
-                send_discord_message(f"[매도시도 초과]: [{ticker}] 현재가가 볼린저 상단 99.5% 이상 / 수익률: {profit_rate:.2f}%")
-                print(f"[매도시도 초과]: [{ticker}] 현재가가 볼린저 상단 99.5% 이상 / 수익률: {profit_rate:.2f}%")
+                send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% / 현재가가 볼린저 상단 99.5% 이상")
+                print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% / 현재가가 볼린저 상단 99.5% 이상")
                 return sell_order   
             else:
                 return None
