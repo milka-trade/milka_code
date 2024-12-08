@@ -76,7 +76,7 @@ def get_best_k(ticker):
     if df is None or df.empty:
         return bestK  # 데이터가 없으면 초기 K 반환
     
-    for k in np.arange(0.1, 0.2, 0.1):  
+    for k in np.arange(0.05, 0.3, 0.05):  
         df['range'] = (df['high'] - df['low']) * k      #변동성 계산
         df['target'] = df['open'] + df['range'].shift(1)  # 매수 목표가 설정
         fee = 0.0005  # 거래 수수료 (0.05%로 설정)
@@ -252,11 +252,15 @@ def get_ai_decision(ticker):
                 "content": [
                     {
                 "type": "text",
-                "text": "You are an expert in cryptocurrency trading and you want to know the best time to buy based on the given data."
+                "text": "You are an expert in cryptocurrency trading and you determine the best time to buy based on the given data."
                     },
                     {
                 "type": "text",
-                "text": "Specifically, you analyze the Bollinger Bands indicator based on the cryptocurrency's chart data and give a “sell” answer if you predict that the cryptocurrency's future price will fall further below the bottom of the Bollinger Bands, and a “buy” answer if you predict that the cryptocurrency's future price will rebound and increase by more than 1.02 times the current price."
+                "text": "you analyze the Bollinger Bands indicator based on the cryptocurrency's chart data and look for coins that have dropped below the lower Bollinger Band."
+                    },
+                    {
+                "type": "text",
+                "text": "Specifically, based on the given data, if your comprehensive reasoning predicts that the cryptocurrency's price will bounce off the bottom of the Bollinger Bands within an hour and increase by more than 1.02x in the future, you will give a buy signal; otherwise, if you predict that the cryptocurrency's price will fall further from the bottom of the Bollinger Bands, you will give a sell signal."
                     },
                     {
                 "type": "text",
@@ -323,23 +327,17 @@ def filtered_tickers(tickers, held_coins):
             cur_price = pyupbit.get_current_price(t)
                       
             day_open_price_1 = df_day['open'].iloc[-1]  #9시 기준 당일 시가
-            # day_value_1 = df_day['value'].iloc[-1]
-            m240_open = df_240['open'].iloc[-1] 
-            value_240 = df_240['value'].iloc[-1]
             df_15_open = df_15['open'].iloc[-1]
             df_15_low1 = df_15['low'].iloc[-1]
             df_15_low2 = df_15['low'].iloc[-2]
             atr = get_atr(t, 14)
 
-            # New Indicators and Patterns #2
             ha_df = calculate_ha_candles(t)   #하이킨 아시 캔들 계산
             if ha_df.empty or 'HA_Close' not in ha_df.columns:
                 raise ValueError("ha_df:Heikin Ashi DataFrame is empty or HA_Close column is missing.")
             
             last_ema200 = get_ema(t, 200).iloc[-1]    #200봉 지수이동평균 계산
             pre_ema200 = get_ema(t, 200).iloc[-2]
-            
-            last_ema20 = get_ema(t, 20).iloc[-1]    #20봉 지수이동평균 계산
             
             ta_rsi = get_ta_rsi(t, 14)
             last_ta_rsi = ta_rsi.iloc[-1]
@@ -348,7 +346,6 @@ def filtered_tickers(tickers, held_coins):
             if ta_stoch_rsi.empty or len(ta_stoch_rsi) < 2:
                 raise ValueError("stoch_rsi : Stochastic RSI DataFrame is empty or has insufficient data.")
 
-            # 스토캐스틱 RSI 마지막 값 확인
             if not ta_stoch_rsi.empty and len(ta_stoch_rsi) >= 2:
                 last_ta_srsi = ta_stoch_rsi.iloc[-1]
                 previous_ta_srsi = ta_stoch_rsi.iloc[-2]
@@ -358,7 +355,6 @@ def filtered_tickers(tickers, held_coins):
             last_ta_srsi = ta_stoch_rsi.iloc[-1]
             previous_ta_srsi = ta_stoch_rsi.iloc[-2]
 
-            # 하이킨 아시 캔들의 종가
             pre_ha_close = ha_df['HA_Close'].iloc[-2]
             last_ha_close = ha_df['HA_Close'].iloc[-1]
             last_ha_open = ha_df['HA_Open'].iloc[-1] 
@@ -387,7 +383,7 @@ def filtered_tickers(tickers, held_coins):
                                     print(f"[cond 6]: [{t}] 볼린저밴드 상하단 폭 3% 이상")
                                     # send_discord_message(f"[cond 6]: [{t}] 볼린저밴드 상하단 폭 3% 이상")
                                         
-                                    if df_15_low1 < Low_Bol*1.005 or df_15_low2 < Low_Bol*1.005:
+                                    if df_15_low1 < Low_Bol*1.005:
                                         # send_discord_message(f"[cond 7]: [{t}] / 15분봉이 볼린저밴드 하단 0.5%부분 터치")
                                         print(f"[cond 7]: [{t}] 15분봉이 볼린저밴드 하단 0.5%부분 터치")
 
@@ -522,8 +518,8 @@ def trade_sell(ticker):
             sell_order = upbit.sell_market_order(ticker, buyed_amount)
             # sell_order = upbit.sell_limit_order(ticker, buyed_amount, current_price)
             # send_discord_message(f"[보합 / 장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / ema20: {last_ema20:,.2f} < {current_price:,.2f} ")
-            print(f"[보합 / 장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {upper_band * 0.99:,.2f}")
-            send_discord_message(f"[보합 / 장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {upper_band * 0.99:,.2f}")
+            print(f"[장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {upper_band * 0.99:,.2f}")
+            send_discord_message(f"[장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {upper_band * 0.99:,.2f}")
                            
     else:
         if profit_rate >= 0.5:  
@@ -534,7 +530,7 @@ def trade_sell(ticker):
                 # print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 현재가: {current_price:,.2f} 수익률: {profit_rate:.2f}% ")
                 print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 현재가: {current_price:,.2f} 수익률: {profit_rate:.2f}%") 
                     
-                if profit_rate >= 1.5:
+                if profit_rate >= 2:
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
                     # sell_order = upbit.sell_limit_order(ticker, buyed_amount, current_price)
                     print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
@@ -545,17 +541,15 @@ def trade_sell(ticker):
                     time.sleep(0.5)  # 짧은 대기                
                 attempts += 1  # 조회 횟수 증가
                 
-            if profit_rate >= 0.8 :
-                # if last_ema20 < current_price :
-                if upper_band * 0.995 <= current_price :
-                    # sell_price = pyupbit.get_current_price(ticker)
-                    sell_order = upbit.sell_market_order(ticker, buyed_amount)
-                    # sell_order = upbit.sell_limit_order(ticker, buyed_amount, sell_price)
+            if profit_rate >= 1 and upper_band * 0.995 <= current_price:
+                # sell_price = pyupbit.get_current_price(ticker)
+                sell_order = upbit.sell_market_order(ticker, buyed_amount)
+                # sell_order = upbit.sell_limit_order(ticker, buyed_amount, sell_price)
 
-                    # send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / ema20: {last_ema20:,.2f} < {current_price:,.2f} ")
-                    send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / current_price < upper_Band_99.5%")
-                    print(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / current_price < upper_Band_99.5%")
-                    return sell_order   
+                # send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / ema20: {last_ema20:,.2f} < {current_price:,.2f} ")
+                send_discord_message(f"[매도시도 초과]: [{ticker}] 현재가가 볼린저 상단 99.5% 이상 / 수익률: {profit_rate:.2f}%")
+                print(f"[매도시도 초과]: [{ticker}] 현재가가 볼린저 상단 99.5% 이상 / 수익률: {profit_rate:.2f}%")
+                return sell_order   
             else:
                 return None
     return None
