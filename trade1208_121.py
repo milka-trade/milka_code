@@ -530,7 +530,7 @@ def trade_sell(ticker):
                 # print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 현재가: {current_price:,.2f} 수익률: {profit_rate:.2f}% ")
                 print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 현재가: {current_price:,.2f} 수익률: {profit_rate:.2f}%") 
                     
-                if profit_rate >= 5:
+                if profit_rate >= 3:
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
                     # sell_order = upbit.sell_limit_order(ticker, buyed_amount, current_price)
                     print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
