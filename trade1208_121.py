@@ -510,7 +510,7 @@ def trade_sell(ticker):
     sell_start = selltime.replace(hour=8, minute=30 , second=00, microsecond=0)
     sell_end = selltime.replace(hour=8, minute=59, second=50, microsecond=0)
 
-    max_attempts = 15  # 최대 조회 횟수
+    max_attempts = 10  # 최대 조회 횟수
     attempts = 0  # 현재 조회 횟수
     
     if sell_start <= selltime <= sell_end:      # 매도 제한시간이면
@@ -530,7 +530,7 @@ def trade_sell(ticker):
                 # print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 현재가: {current_price:,.2f} 수익률: {profit_rate:.2f}% ")
                 print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 현재가: {current_price:,.2f} 수익률: {profit_rate:.2f}%") 
                     
-                if profit_rate >= 2:
+                if profit_rate >= 5:
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
                     # sell_order = upbit.sell_limit_order(ticker, buyed_amount, current_price)
                     print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
