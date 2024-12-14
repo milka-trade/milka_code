@@ -522,7 +522,7 @@ def trade_sell(ticker):
             send_discord_message(f"[장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {upper_band * 0.99:,.2f}")
                            
     else:
-        if profit_rate >= 0.5:  
+        if profit_rate >= 0.7:  
             while attempts < max_attempts:
                 current_price = pyupbit.get_current_price(ticker)  # 현재 가격 재조회
                 profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
@@ -541,14 +541,14 @@ def trade_sell(ticker):
                     time.sleep(0.5)  # 짧은 대기                
                 attempts += 1  # 조회 횟수 증가
                 
-            if profit_rate >= 1 and upper_band * 0.995 <= current_price:
+            if profit_rate >= 1.3 and upper_band <= current_price:
                 # sell_price = pyupbit.get_current_price(ticker)
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
                 # sell_order = upbit.sell_limit_order(ticker, buyed_amount, sell_price)
 
                 # send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / ema20: {last_ema20:,.2f} < {current_price:,.2f} ")
-                send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% / 현재가가 볼린저 상단 99.5% 이상")
-                print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% / 현재가가 볼린저 상단 99.5% 이상")
+                send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} / 현재가가 볼린저 상단값 이상")
+                print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} / 현재가가 볼린저 상단값 이상")
                 return sell_order   
             else:
                 return None
