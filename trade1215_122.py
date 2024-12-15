@@ -374,10 +374,10 @@ def filtered_tickers(tickers, held_coins):
                     # print(f"[cond 2]: [{t}] 15봉:{df_15_open:,.2f} < 현재가:{cur_price:,.2f} < 현재가 5%: {day_open_price_1 * 1.1:,.2f}")
 
                     if pre_ema200 < last_ema200 < last_ha_close :
-                        if pre_ha_close < last_ha_close : 
+                        if last_ha_open < last_ha_close : 
                         # print(f"[cond 3]: [{t}] ema2:{pre_ema200:,.2f} < ema1:{last_ema200:,.2f} < candle : {last_ha_close:,.2f}")
                     
-                            if 0 < previous_ta_srsi < last_ta_srsi <= 0.1:
+                            if 0 < previous_ta_srsi < last_ta_srsi <= 0.15:
                                 print(f"[cond 4]: [{t}] 0 < [pre s_RSI]: {previous_ta_srsi:,.2f} < [last s_RSI]:{last_ta_srsi:,.2f} <= 0.1")   
                                 # send_discord_message(f"[cond 5]: [{t}] 0 < [pre s_RSI]: {previous_ta_srsi:,.2f} < [last s_RSI]:{last_ta_srsi:,.2f} <= 0.2")
 
@@ -388,7 +388,7 @@ def filtered_tickers(tickers, held_coins):
                                         # print(f"[cond 6]: [{t}] 볼린저밴드 상하단 폭 3% 이상")
                                         # send_discord_message(f"[cond 6]: [{t}] 볼린저밴드 상하단 폭 3% 이상")
                                             
-                                    if df_15_low1 < Low_Bol*0.99 or df_15_low2 < Low_Bol*0.99 or cur_price < Low_Bol*0.95:
+                                    if df_15_low1 < Low_Bol or df_15_low2 < Low_Bol or cur_price < Low_Bol*0.99:
                                         print(f"[cond 6]: [{t}] 15분 1봉 또는 2봉전에 볼린저밴드 하단 터치")
                                             # send_discord_message(f"[cond 7]: [{t}] / 15분봉이 볼린저밴드 하단 0.5%부분 터치")
 
