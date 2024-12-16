@@ -388,7 +388,7 @@ def filtered_tickers(tickers, held_coins):
                                         # print(f"[cond 6]: [{t}] 볼린저밴드 상하단 폭 3% 이상")
                                         # send_discord_message(f"[cond 6]: [{t}] 볼린저밴드 상하단 폭 3% 이상")
                                             
-                                    if df_15_low1 < Low_Bol or df_15_low2 < Low_Bol or cur_price < Low_Bol*0.99:
+                                    if df_15_low1 < Low_Bol*0.999 or df_15_low2 < Low_Bol*0.999 or cur_price < Low_Bol*0.99:
                                         print(f"[cond 6]: [{t}] 15분 1봉 또는 2봉전에 볼린저밴드 하단 터치")
                                             # send_discord_message(f"[cond 7]: [{t}] / 15분봉이 볼린저밴드 하단 0.5%부분 터치")
 
@@ -543,10 +543,10 @@ def trade_sell(ticker):
                     return sell_order
 
                 else:
-                    time.sleep(0.5)  # 짧은 대기                
+                    time.sleep(0.5)  # 짧은 대기                                                                                                                                                    
                 attempts += 1  # 조회 횟수 증가
                 
-            if profit_rate >= 1.3 and upper_band <= current_price:
+            if profit_rate >= 0.7 and upper_band <= current_price:
                 # sell_price = pyupbit.get_current_price(ticker)
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
                 # sell_order = upbit.sell_limit_order(ticker, buyed_amount, sell_price)
