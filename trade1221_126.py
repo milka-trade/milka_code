@@ -369,6 +369,8 @@ def filtered_tickers(tickers, held_coins):
             df_15_open = df_15['open'].iloc[-1]
             df_15_low1 = df_15['low'].iloc[-1]
             df_15_low2 = df_15['low'].iloc[-2]
+            df_15_close2 = df_15['close'].iloc[-2]
+            df_15_close1 = df_15['close'].iloc[-1]
             atr = get_atr(t, 14)
 
             ha_df = calculate_ha_candles(t)   #하이킨 아시 캔들 계산
@@ -403,14 +405,14 @@ def filtered_tickers(tickers, held_coins):
             # Up_Bol = get_bollinger_upper_band(t).iloc[-1]
 
             # print(f"test1: {t} / 일봉 거래대금 {day_value_1:,.0f}")
-            if day_value_1 > 10_000_000_000:
+            if day_value_1 > 20_000_000_000:
                 # print(f"cond1: {t} / 당일 거래량 > 10,000백만")
 
                 if threshold_value < atr :
                     # print(f"[cond 2]: {t} / [임계치] : {threshold_value:,.0f} < [변동폭] : {atr:,.0f}")
 
-                    if cur_price < day_open_price_1*1.03:                                    
-                        # print(f"[cond 2]: [{t}] 현재가:{cur_price:,.2f} < 시가 3%: {day_open_price_1 * 1.03:,.2f}")
+                    if cur_price < day_open_price_1*1.01:                                    
+                        # print(f"[cond 2]: [{t}] 현재가:{cur_price:,.2f} < 시가 3%: {day_open_price_1 * 1.01:,.2f}")
 
                         # if pre_ema200 < last_ema200 < last_ha_close :
                         #     print(f"[cond 3-1]: [{t}] pre_ema200:{pre_ema200:,.2f} < last_ema200:{last_ema200:,.2f} < candle : {last_ha_close:,.2f}")
@@ -425,17 +427,17 @@ def filtered_tickers(tickers, held_coins):
                                 if last_ta_rsi < 60 :
                                     # print(f"[cond 5]: [{t}] [RSI]:{last_ta_rsi:,.2f} < 60")    
 
-                                    # if Low_Bol * 1.03 < Up_Bol :
-                                        # print(f"[cond 6]: [{t}] 볼린저밴드 상하단 폭 3% 이상")
-                                        # send_discord_message(f"[cond 6]: [{t}] 볼린저밴드 상하단 폭 3% 이상")
+                                    # if Low_Bol * 1.05 < Up_Bol :
+                                    #     print(f"[cond 6]: [{t}] 볼린저밴드 상하단 폭 3% 이상")
+                                    #     send_discord_message(f"[cond 6]: [{t}] 볼린저밴드 상하단 폭 3% 이상")
                                             
-                                    if df_15_low1 < Low_Bol*1.005 or df_15_low2 < Low_Bol*1.005 :
+                                    if df_15_close1 < Low_Bol or df_15_close2 < Low_Bol :
                                         print(f"[cond 6]: [{t}] 15분 1봉 또는 2봉전에 볼린저밴드 하단 터치")
                                         send_discord_message(f"[cond 6]: [{t}] 15분 1봉 또는 2봉전에 볼린저밴드 하단 터치")
 
-                                        if Low_Bol*1.005 < cur_price :
-                                            print(f"[cond 8]: [{t}] 현재가가 볼린저밴드 1.005%이상 상승")
-                                            send_discord_message(f"[cond 8]: [{t}] 현재가가 볼린저밴드 1.005%이상 상승")
+                                        if Low_Bol*1.002 < cur_price :
+                                            print(f"[cond 8]: [{t}] 현재가가 볼린저밴드 1.002%이상 상승")
+                                            send_discord_message(f"[cond 8]: [{t}] 현재가가 볼린저밴드 1.002%이상 상승")
 
                                         # ai_decision = get_ai_decision(t)  
                                         # send_discord_message(f"[cond 7]: [{t}] AI: {ai_decision}")
@@ -513,7 +515,7 @@ def trade_buy(ticker, k):
         while attempt < max_retries:
                 current_price = pyupbit.get_current_price(ticker)
                 print(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / 목표가:{target_price:,.2f} -(시도 {attempt + 1}/{max_retries})")
-                send_discord_message(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / 목표가:{target_price:,.2f} -(시도 {attempt + 1}/{max_retries})")
+                # send_discord_message(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / 목표가:{target_price:,.2f} -(시도 {attempt + 1}/{max_retries})")
 
                 if current_price < target_price :
                     # print(f"매수 시도: {ticker}")
@@ -714,15 +716,15 @@ def additional_buy_logic():
                 # 볼린저 밴드 하단값 조회
                 low_band = get_bollinger_lower_band(ticker).iloc[-1]  # 볼린저 밴드 하단값 조회
 
-                # 조건 체크: 수익률이 -5% 이하이고 현재가가 볼린저 밴드 하단보다 작으면 추가 매수
-                if profit_rate <= -5 and current_price < low_band:
+                # 조건 체크: 수익률이 -6% 이하이고 현재가가 볼린저 밴드 하단보다 작으면 추가 매수
+                if profit_rate <= -6 and current_price < low_band:
                     # print(f'매수 조건 만족: {ticker} / 현재가: {current_price} / 볼린저 밴드 하단: {low_band}')
                     buy_size = 1_000_000  # 추가 매수할 금액 설정
                     result = upbit.buy_market_order(ticker, buy_size)  # 추가 매수 실행
 
                     # 매수 결과 메시지 전송
                     if result:
-                        send_discord_message(f"추가 매수: {ticker} / 수익률 : {profit_rate:,.0f} / 수량: {buy_size}")
+                        send_discord_message(f"추가 매수: {ticker} / 수익률 : {profit_rate:,.1f} / 수량: {buy_size}")
                         time.sleep(60)
 
                 else:
