@@ -723,10 +723,11 @@ def additional_buy_logic():
                     # 매수 결과 메시지 전송
                     if result:
                         send_discord_message(f"추가 매수: {ticker} / 수익률 : {profit_rate:,.0f} / 수량: {buy_size}")
+                        time.sleep(60)
 
                 else:
-                    print(f'조건 미충족: {ticker} / 현재가: {current_price} / 수익률 : {profit_rate:,.2f}')
-        time.sleep(60)
+                    # print(f'조건 미충족: {ticker} / 현재가: {current_price} / 수익률 : {profit_rate:,.2f}')
+                    time.sleep(60)
 
 # 매도 쓰레드 생성
 selling_thread = threading.Thread(target=selling_logic)
