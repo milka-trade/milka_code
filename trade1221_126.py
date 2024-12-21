@@ -76,7 +76,7 @@ def get_best_k(ticker):
     if df is None or df.empty:
         return bestK  # 데이터가 없으면 초기 K 반환
     
-    for k in np.arange(0.1, 0.3, 0.1):  
+    for k in np.arange(0.01, 0.02, 0.01):  
         df['range'] = (df['high'] - df['low']) * k      #변동성 계산
         df['target'] = df['open'] + df['range'].shift(1)  # 매수 목표가 설정
         fee = 0.0005  # 거래 수수료 (0.05%로 설정)
