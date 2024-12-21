@@ -699,31 +699,34 @@ def buying_logic():
             time.sleep(5)
 
 def additional_buy_logic():
-    balances = upbit.get_balances()  # 잔고 조회
-    for b in balances:
-        # 특정 통화 제외
-        if b['currency'] not in ["KRW", "QI", "ONX", "ETHF", "ETHW", "PURSE"]:
-            ticker = f"KRW-{b['currency']}"  # 현재가 조회를 위한 티커 설정
-            current_price = pyupbit.get_current_price(ticker)  # 현재가 조회
+    while True:
+        balances = upbit.get_balances()  # 잔고 조회
+        for b in balances:
+            # 특정 통화 제외
+            if b['currency'] not in ["KRW", "QI", "ONX", "ETHF", "ETHW", "PURSE"]:
+                ticker = f"KRW-{b['currency']}"  # 현재가 조회를 위한 티커 설정
+                current_price = pyupbit.get_current_price(ticker)  # 현재가 조회
 
-            # 수익률 계산
-            avg_buy_price = upbit.get_avg_buy_price(b['currency'])  # 평균 매수 가격 조회
-            profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
+                # 수익률 계산
+                avg_buy_price = upbit.get_avg_buy_price(b['currency'])  # 평균 매수 가격 조회
+                profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
 
-            # 볼린저 밴드 하단값 조회
-            low_band = get_bollinger_lower_band(ticker).iloc[-1]  # 볼린저 밴드 하단값 조회
+                # 볼린저 밴드 하단값 조회
+                low_band = get_bollinger_lower_band(ticker).iloc[-1]  # 볼린저 밴드 하단값 조회
 
-            # 조건 체크: 수익률이 -5% 이하이고 현재가가 볼린저 밴드 하단보다 작으면 추가 매수
-            if profit_rate <= -5 and current_price < low_band:
-                # print(f'매수 조건 만족: {ticker} / 현재가: {current_price} / 볼린저 밴드 하단: {low_band}')
-                buy_size = 1_000_000  # 추가 매수할 금액 설정
-                result = upbit.buy_market_order(ticker, buy_size)  # 추가 매수 실행
+                # 조건 체크: 수익률이 -5% 이하이고 현재가가 볼린저 밴드 하단보다 작으면 추가 매수
+                if profit_rate <= -5 and current_price < low_band:
+                    # print(f'매수 조건 만족: {ticker} / 현재가: {current_price} / 볼린저 밴드 하단: {low_band}')
+                    buy_size = 1_000_000  # 추가 매수할 금액 설정
+                    result = upbit.buy_market_order(ticker, buy_size)  # 추가 매수 실행
 
-                # 매수 결과 메시지 전송
-                if result:
-                    send_discord_message(f"추가 매수: {ticker} / 수익률 : {profit_rate:,.0f} / 수량: {buy_size}")
-            else:
-                print(f'조건 미충족: {ticker} / 현재가: {current_price} / 볼린저 밴드 하단: {low_band}')            
+                    # 매수 결과 메시지 전송
+                    if result:
+                        send_discord_message(f"추가 매수: {ticker} / 수익률 : {profit_rate:,.0f} / 수량: {buy_size}")
+
+                else:
+                    print(f'조건 미충족: {ticker} / 현재가: {current_price} / 수익률 : {profit_rate:,.2f}')
+        time.sleep(60)
 
 # 매도 쓰레드 생성
 selling_thread = threading.Thread(target=selling_logic)
