@@ -420,7 +420,7 @@ def filtered_tickers(tickers, held_coins):
                     
                         if 0 < previous_ta_srsi < last_ta_srsi <= 0.2:
                                 # print(f"[cond 4]: [{t}] 0 < [last s_RSI]:{last_ta_srsi:,.2f} <= 0.2")
-                                    # send_discord_message(f"[cond 5]: [{t}] 0 < [pre s_RSI]: {previous_ta_srsi:,.2f} < [last s_RSI]:{last_ta_srsi:,.2f} <= 0.2")
+                                # send_discord_message(f"[cond 5]: [{t}] 0 < [pre s_RSI]: {previous_ta_srsi:,.2f} < [last s_RSI]:{last_ta_srsi:,.2f} <= 0.2")
 
                                 if last_ta_rsi < 60 :
                                     # print(f"[cond 5]: [{t}] [RSI]:{last_ta_rsi:,.2f} < 60")    
@@ -429,7 +429,7 @@ def filtered_tickers(tickers, held_coins):
                                         # print(f"[cond 6]: [{t}] 볼린저밴드 상하단 폭 3% 이상")
                                         # send_discord_message(f"[cond 6]: [{t}] 볼린저밴드 상하단 폭 3% 이상")
                                             
-                                    if df_15_low1 < Low_Bol or df_15_low2 < Low_Bol :
+                                    if df_15_low1 < Low_Bol*1.005 or df_15_low2 < Low_Bol*1.005 :
                                         print(f"[cond 6]: [{t}] 15분 1봉 또는 2봉전에 볼린저밴드 하단 터치")
                                         send_discord_message(f"[cond 6]: [{t}] 15분 1봉 또는 2봉전에 볼린저밴드 하단 터치")
 
@@ -551,6 +551,7 @@ def trade_sell(ticker):
     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
     last_ema20 = get_ema(ticker, 20).iloc[-1]    #20봉 지수이동평균 계산
     upper_band = get_bollinger_upper_band(ticker).iloc[-1]
+    low_band = get_bollinger_lower_band(ticker).iloc[-1]
 
     selltime = datetime.now()
     sell_start = selltime.replace(hour=8, minute=30 , second=00, microsecond=0)
@@ -568,7 +569,7 @@ def trade_sell(ticker):
             send_discord_message(f"[장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {upper_band * 0.99:,.2f}")
                            
     else:
-        if profit_rate >= 0.7:  
+        if profit_rate >= 0.5:  
             while attempts < max_attempts:
                 current_price = pyupbit.get_current_price(ticker)  # 현재 가격 재조회
                 profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
@@ -576,7 +577,7 @@ def trade_sell(ticker):
                 # print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 현재가: {current_price:,.2f} 수익률: {profit_rate:.2f}% ")
                 print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 현재가: {current_price:,.2f} 수익률: {profit_rate:.2f}%") 
                     
-                if profit_rate >= 1.1:
+                if profit_rate >= 3 and last_ema20*1.03 <=current_price :
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
                     # sell_order = upbit.sell_limit_order(ticker, buyed_amount, current_price)
                     print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
@@ -587,7 +588,7 @@ def trade_sell(ticker):
                     time.sleep(0.5)  # 짧은 대기                                                                                                                                                    
                 attempts += 1  # 조회 횟수 증가
                 
-            if profit_rate >= 0.7 and last_ema20*1.01 <= current_price:
+            if profit_rate >= 0.8 and low_band*1.02 <= current_price:
                 # sell_price = pyupbit.get_current_price(ticker)
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
                 # sell_order = upbit.sell_limit_order(ticker, buyed_amount, sell_price)
