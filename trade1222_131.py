@@ -419,7 +419,8 @@ def filtered_tickers(tickers, held_coins):
                                 if last_ta_srsi < 0.15:
                                     print(f"[cond 6]: [{t}]  [last s_RSI]:{last_ta_srsi:,.2f} <= 0.15")
                                     send_discord_message(f"[cond 6]: [{t}] [last s_RSI]:{last_ta_srsi:,.2f} <= 0.15")
-                                    filtered_tickers.append(t)
+                                    if df_15_open < cur_price:
+                                        filtered_tickers.append(t)
                                 
 
                                     # if Low_Bol * 1.03 < Up_Bol :
