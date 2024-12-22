@@ -409,7 +409,7 @@ def filtered_tickers(tickers, held_coins):
                         #         print(f"[cond 3-2]: [{t}] 캔들시가:{last_ha_open:,.2f} < 캔들종가:{last_ha_close:,.2f}")
 
                         if last_ta_rsi < 60 :
-                            print(f"[cond 4]: [{t}] [RSI]:{last_ta_rsi:,.2f} < 60")                        
+                            # print(f"[cond 4]: [{t}] [RSI]:{last_ta_rsi:,.2f} < 60")                        
                             
                             if df_15_low1 < Low_Bol or df_15_low2 < Low_Bol :
                                 print(f"[cond 5]: [{t}] 15분 1봉 또는 2봉전에 볼린저밴드 하단 터치")
@@ -587,8 +587,8 @@ def trade_sell(ticker):
                 # sell_order = upbit.sell_limit_order(ticker, buyed_amount, sell_price)
 
                 # send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / ema20: {last_ema20:,.2f} < {current_price:,.2f} ")
-                send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} / 현재가가 볼린저 상단값 이상")
-                print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} / 현재가가 볼린저 상단값 이상")
+                send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} / 현재가가 ema20 이상")
+                print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} / 현재가가 ema20 이상")
                 return sell_order   
             else:
                 return None
