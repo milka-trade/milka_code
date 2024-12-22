@@ -76,7 +76,7 @@ def get_best_k(ticker):
     if df is None or df.empty:
         return bestK  # 데이터가 없으면 초기 K 반환
     
-    for k in np.arange(0.1, 0.3, 0.1):  
+    for k in np.arange(0.3, 0.5, 0.1):  
         df['range'] = (df['high'] - df['low']) * k      #변동성 계산
         df['target'] = df['open'] + df['range'].shift(1)  # 매수 목표가 설정
         fee = 0.0005  # 거래 수수료 (0.05%로 설정)
@@ -413,13 +413,14 @@ def filtered_tickers(tickers, held_coins):
                             
                             if df_15_low1 < Low_Bol or df_15_low2 < Low_Bol :
                                 print(f"[cond 5]: [{t}] 15분 1봉 또는 2봉전에 볼린저밴드 하단 터치")
-                                send_discord_message(f"[cond 5]: [{t}] 15분 1봉 또는 2봉전에 볼린저밴드 하단 터치")
+                                # send_discord_message(f"[cond 5]: [{t}] 15분 1봉 또는 2봉전에 볼린저밴드 하단 터치")
 
                                 # send_discord_message(f"[test 6]: [{t}] [last s_RSI]:{last_ta_srsi:,.2f}")
                                 if last_ta_srsi < 0.15:
                                     print(f"[cond 6]: [{t}]  [last s_RSI]:{last_ta_srsi:,.2f} <= 0.15")
                                     send_discord_message(f"[cond 6]: [{t}] [last s_RSI]:{last_ta_srsi:,.2f} <= 0.15")
                                     if df_15_open < cur_price:
+                                        send_discord_message(f"[cond 7]: [{t}] 현재가 양봉")
                                         filtered_tickers.append(t)
                                 
 
@@ -497,7 +498,7 @@ def trade_buy(ticker, k):
     krw = get_balance("KRW")
     buyed_amount = get_balance(ticker.split("-")[1]) 
     max_retries = 20  
-    buy_size = min(1000000,krw*0.9995)
+    buy_size = min(1500000,krw*0.9995)
     
     attempt = 0  # 시도 횟수 초기화
     target_price = None  # target_price 초기화
@@ -711,7 +712,7 @@ def additional_buy_logic():
                 # 조건 체크: 수익률이 -6% 이하이고 현재가가 볼린저 밴드 하단보다 작으면 추가 매수
                 if profit_rate <= -6 and current_price < low_band:
                     # print(f'매수 조건 만족: {ticker} / 현재가: {current_price} / 볼린저 밴드 하단: {low_band}')
-                    buy_size = 1_000_000  # 추가 매수할 금액 설정
+                    buy_size = 1_500_000  # 추가 매수할 금액 설정
                     result = upbit.buy_market_order(ticker, buy_size)  # 추가 매수 실행
 
                     # 매수 결과 메시지 전송
