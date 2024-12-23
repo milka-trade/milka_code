@@ -584,7 +584,7 @@ def trade_sell(ticker):
                     time.sleep(0.5)  # 짧은 대기                                                                                                                                                    
                 attempts += 1  # 조회 횟수 증가
                 
-            if profit_rate >= 0.8 and current_price > last_ema20*0.99:
+            if profit_rate >= 0.8 and current_price > last_ema20*0.98:
                 # sell_price = pyupbit.get_current_price(ticker)
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
                 # sell_order = upbit.sell_limit_order(ticker, buyed_amount, sell_price)
