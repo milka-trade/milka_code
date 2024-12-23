@@ -364,6 +364,7 @@ def filtered_tickers(tickers, held_coins):
                       
             day_open_price_1 = df_day['open'].iloc[-1]  #9시 기준 당일 시가
             df_15_open = df_15['open'].iloc[-1]
+            df_15_close = df_15['close'].iloc[-1]
             df_15_low1 = df_15['low'].iloc[-1]
             df_15_low2 = df_15['low'].iloc[-2]
             atr = get_atr(t, 14)
@@ -419,7 +420,7 @@ def filtered_tickers(tickers, held_coins):
                                 if last_ta_srsi < 0.15:
                                     print(f"[cond 6]: [{t}]  [last s_RSI]:{last_ta_srsi:,.2f} <= 0.15")
                                     send_discord_message(f"[cond 6]: [{t}] [last s_RSI]:{last_ta_srsi:,.2f} <= 0.15")
-                                    if df_15_open < cur_price:
+                                    if df_15_open < df_15_close:
                                         send_discord_message(f"[cond 7]: [{t}] 현재가 양봉")
                                         filtered_tickers.append(t)
                                 
