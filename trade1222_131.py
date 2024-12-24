@@ -254,16 +254,16 @@ def filtered_tickers(tickers, held_coins):
 
             # print(f"test1: {t} / 일봉 거래대금 {day_value_1:,.0f}")
             if day_value_1 > 10_000_000_000:
-                print(f"[cond 1]: {t} / 당일 거래량 > 10,000백만")
+                # print(f"[cond 1]: {t} / 당일 거래량 > 10,000백만")
 
                 if threshold_value < atr :
-                    print(f"[cond 2]: {t} / [임계치] : {threshold_value:,.0f} < [변동폭] : {atr:,.0f}")
+                    # print(f"[cond 2]: {t} / [임계치] : {threshold_value:,.0f} < [변동폭] : {atr:,.0f}")
 
-                    if cur_price < day_open_price_1*1.02:                                    
-                        print(f"[cond 3]: [{t}] 현재가:{cur_price:,.2f} < 시가 3%: {day_open_price_1 * 1.03:,.2f}")
+                    if cur_price < day_open_price_1*1.03:
+                        # print(f"[cond 3]: [{t}] 현재가:{cur_price:,.2f} < 시가 3%: {day_open_price_1 * 1.03:,.2f}")
 
                         if last_ta_rsi < 60 :
-                            print(f"[cond 4]: [{t}] [RSI]:{last_ta_rsi:,.2f} < 60")                        
+                            # print(f"[cond 4]: [{t}] [RSI]:{last_ta_rsi:,.2f} < 60")                        
                             
                             # print(f"[test 5]: [{t}] 볼린저밴드 하단 터치 / low1: {df_15_low1:,.2f} < bol1: {Low_Bol1:,.2f} / low2: {df_15_low2:,.2f} < bol2: {Low_Bol2:,.2f}")
                             if df_15_low1 < Low_Bol1*1.005 or df_15_low2 < Low_Bol2*1.005 :
