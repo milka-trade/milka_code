@@ -5,10 +5,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
-from openai import OpenAI
-import json
 import requests
-import pandas as pd
 import ta
 
 load_dotenv()
@@ -30,7 +27,7 @@ def load_ohlcv(ticker):
     global df_tickers
     if ticker not in df_tickers:   # 티커가 캐시에 없으면 데이터 가져오기     
         try:
-            df_tickers[ticker] = pyupbit.get_ohlcv(ticker, interval="minute15", count=200) 
+            df_tickers[ticker] = pyupbit.get_ohlcv(ticker, interval="minute15", count=50) 
             if df_tickers[ticker] is None or df_tickers[ticker].empty:
                 print(f"load_ohlcv / No data returned for ticker: {ticker}")
                 send_discord_message(f"load_ohlcv / No data returned for ticker: {ticker}")
@@ -58,8 +55,8 @@ def get_balance(ticker):
     return 0
 
 def get_ema(ticker, window):
-    df = load_ohlcv(ticker)
-    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200)
+    # df = load_ohlcv(ticker)
+    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
 
     if df is not None and not df.empty:
         return df['close'].ewm(span=window, adjust=False).mean()  # EMA 계산 후 마지막 값 반환
@@ -71,7 +68,7 @@ def get_best_k(ticker):
     bestK = 0.1  # 초기 K 값
     interest = 0  # 초기 수익률
     # df = load_ohlcv(ticker)  # 데이터 로드
-    df = pyupbit.get_ohlcv(ticker, interval="minute60", count=30)
+    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=20)
 
     if df is None or df.empty:
         return bestK  # 데이터가 없으면 초기 K 반환
@@ -130,30 +127,6 @@ def ta_stochastic_rsi(ticker):
     # Stochastic RSI 값만 반환 
     return stoch_rsi if not stoch_rsi.empty else 0
 
-def calculate_ha_candles(ticker):
-    df = load_ohlcv(ticker)  # 데이터 로드
-    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200) 
-    if df.empty:
-        raise ValueError(f"No data found for ticker: {ticker}")
-
-    # 하이킨아시 캔들 초기화
-    ha_df = pd.DataFrame(index=df.index)
-
-    # 첫 번째 하이킨아시 캔들 시가, 종가는 일반 캔들과 동일
-    ha_df.loc[0, 'HA_Close'] = (df['open'].iloc[0] + df['high'].iloc[0] + df['low'].iloc[0] + df['close'].iloc[0]) / 4
-    ha_df.loc[0, 'HA_Open'] = (df['open'].iloc[0] + df['close'].iloc[0]) / 2
-    ha_df.loc[0, 'HA_High'] = df['high'].iloc[0]
-    ha_df.loc[0, 'HA_Low'] = df['low'].iloc[0]
-
-    # 나머지 하이킨아시 캔들 계산
-    for i in range(1, len(df)):
-        ha_df.loc[i, 'HA_Open'] = (ha_df.loc[i - 1, 'HA_Open'] + ha_df.loc[i - 1, 'HA_Close']) / 2
-        ha_df.loc[i, 'HA_Close'] = (df['open'].iloc[i] + df['high'].iloc[i] + df['low'].iloc[i] + df['close'].iloc[i]) / 4
-        ha_df.loc[i, 'HA_High'] = max(df['high'].iloc[i], ha_df.loc[i, 'HA_Open'], ha_df.loc[i, 'HA_Close'])
-        ha_df.loc[i, 'HA_Low'] = min(df['low'].iloc[i], ha_df.loc[i, 'HA_Open'], ha_df.loc[i, 'HA_Close'])
-
-    return ha_df
-
 def get_atr(ticker, period):
     try:
         # df_atr_day = pyupbit.get_ohlcv(ticker, interval="minute5", count=period)
@@ -197,28 +170,9 @@ def get_dynamic_threshold(tickers):
 
     return np.median(atr_values) if atr_values else 0.05  # Fallback to 0.05 if no ATR values
 
-# def get_bollinger_upper_band(ticker, window=20, std_dev=2):
-#     """특정 티커의 볼린저 밴드 상단값을 가져오는 함수"""
-#     df = pyupbit.get_ohlcv(ticker, interval="minute15", count=30)
-#     if df is None or df.empty:
-#         return None  # 데이터가 없으면 None 반환
-
-#     # 이동 평균과 표준 편차 계산
-#     df['MA'] = df['close'].rolling(window=window).mean()
-#     df['STD'] = df['close'].rolling(window=window).std()
-
-#     # 볼린저 밴드 계산
-#     df['Upper_Band'] = df['MA'] + (df['STD'] * std_dev)
-#     df['Lower_Band'] = df['MA'] - (df['STD'] * std_dev)
-
-#     # 마지막 상단 밴드 값 반환
-#     upper_band = df['Upper_Band']
-
-#     return upper_band
-
 def get_bollinger_upper_band(ticker, window=20, std_dev=2):
     """특정 티커의 볼린저 밴드 상단값을 가져오는 함수"""
-    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=30)
+    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
     if df is None or df.empty:
         return None  # 데이터가 없으면 None 반환
 
@@ -230,27 +184,9 @@ def get_bollinger_upper_band(ticker, window=20, std_dev=2):
 
     return upper_band
 
-# def get_bollinger_lower_band(ticker, window=20, std_dev=2):
-#     """특정 티커의 볼린저 밴드 상단값을 가져오는 함수"""
-#     df = pyupbit.get_ohlcv(ticker, interval="minute15", count=30)
-#     if df is None or df.empty:
-#         return None  # 데이터가 없으면 None 반환
-
-#     # 이동 평균과 표준 편차 계산
-#     df['MA'] = df['close'].rolling(window=window).mean()
-#     df['STD'] = df['close'].rolling(window=window).std()
-
-#     # 볼린저 밴드 계산
-#     df['Upper_Band'] = df['MA'] + (df['STD'] * std_dev)
-#     df['Lower_Band'] = df['MA'] - (df['STD'] * std_dev)
-
-#     # 마지막 하단 밴드 값 반환
-#     lower_band = df['Lower_Band']
-#     return lower_band
-
 def get_bollinger_lower_band(ticker, window=20, std_dev=2):
     """특정 티커의 볼린저 밴드 하단값을 가져오는 함수"""
-    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=30)
+    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
     if df is None or df.empty:
         return None  # 데이터가 없으면 None 반환
 
@@ -261,81 +197,6 @@ def get_bollinger_lower_band(ticker, window=20, std_dev=2):
     lower_band = df['Lower_Band']
 
     return lower_band
-
-
-def get_ai_decision(ticker):
-    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=100)
-
-    if df is None or df.empty:
-        send_discord_message("get_ai_decision/데이터가 없거나 비어 있습니다.")
-        print("get_ai_decision/데이터가 없거나 비어 있습니다.")
-        return None  # 데이터가 없을 경우 None 반환
-    
-    client = OpenAI()
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                "role": "system",
-                "content": [
-                    {
-                "type": "text",
-                "text": "You are an expert in cryptocurrency trading and you determine the best time to buy based on the given data."
-                    },
-                    {
-                "type": "text",
-                "text": "Specifically, based on the given data, you analyze the Bollinger Bands indicator based on the cryptocurrency's chart data."
-                    },
-                    {
-                "type": "text",
-                "text": "You calculate the slope of the Bollinger Bands through comprehensive reasoning. If your calculation predicts that the slope of the Bollinger Bands will stop falling sharply and rebound to start an uptrend, you send a 'buy' signal."
-                    },
-                    {
-                "type": "text",
-                "text": "On the other hand, if the slope of the Bollinger Bands predicts that it will fall further in a short period of time, you send a 'sell' signal."
-                    },
-                    {
-                "type": "text",
-                "text": "Your answer will be in JSON format only, as shown in the example.\n\nResponse Example:\n{\"decision\": \"BUY\"}\n{\"decision\": \"SELL\"}\n{\"decision\": \"HOLD\""
-                    }
-                ]
-                },
-                {
-                "role": "user",
-                "content": [
-                    {
-                    "type": "text",
-                    "text": df.to_json()
-                    }
-                ]
-                }
-            ],
-            response_format={
-                "type": "json_object"
-            }
-            )
-    except Exception as e:
-        print(f"get_ai_decision / AI 요청 중 오류 발생: {e}")
-        send_discord_message(f"get_ai_decision / AI 요청 중 오류 발생: {e}")
-        time.sleep(1)  # API 호출 제한을 위한 대기
-        return None  # 오류 발생 시 None 반환
-    
-    decision_data = response.choices[0].message.content      # 응답에서 필요한 정보만 추출
-
-    if decision_data:
-        try:
-            decision_json = json.loads(decision_data)
-            decision = decision_json.get('decision')
-            if decision in {'BUY', 'SELL', 'HOLD'}:
-                return decision
-        except json.JSONDecodeError:
-            print("get_ai_decision / 응답을 JSON으로 파싱하는 데 실패")
-            send_discord_message("응답을 JSON으로 파싱하는 데 실패")
-            time.sleep(5)  # API 호출 제한을 위한 대기
-    send_discord_message("get_ai_decision/유효하지 않은 응답")
-    print("get_ai_decision/유효하지 않은 응답")
-    return None  # 유효하지 않은 경우 None 반환
 
 def filtered_tickers(tickers, held_coins):
     """특정 조건에 맞는 티커 필터링"""
@@ -368,11 +229,7 @@ def filtered_tickers(tickers, held_coins):
             df_15_low1 = df_15['low'].iloc[-1]
             df_15_low2 = df_15['low'].iloc[-2]
             atr = get_atr(t, 14)
-
-            ha_df = calculate_ha_candles(t)   #하이킨 아시 캔들 계산
-            if ha_df.empty or 'HA_Close' not in ha_df.columns:
-                raise ValueError("ha_df:Heikin Ashi DataFrame is empty or HA_Close column is missing.")
-            
+           
             ta_rsi = get_ta_rsi(t, 14)
             last_ta_rsi = ta_rsi.iloc[-1]
             
@@ -390,7 +247,8 @@ def filtered_tickers(tickers, held_coins):
             previous_ta_srsi = ta_stoch_rsi.iloc[-2]
 
             # 볼린저 밴드 저가
-            Low_Bol = get_bollinger_lower_band(t).iloc[-1]
+            Low_Bol1 = get_bollinger_lower_band(t).iloc[-1]
+            Low_Bol2 = get_bollinger_lower_band(t).iloc[-2]
             # Up_Bol = get_bollinger_upper_band(t).iloc[-1]
 
             # print(f"test1: {t} / 일봉 거래대금 {day_value_1:,.0f}")
@@ -403,42 +261,21 @@ def filtered_tickers(tickers, held_coins):
                     if cur_price < day_open_price_1*1.02:                                    
                         # print(f"[cond 2]: [{t}] 현재가:{cur_price:,.2f} < 시가 3%: {day_open_price_1 * 1.03:,.2f}")
 
-                        # if pre_ema200 < last_ema200 < last_ha_close :
-                        #     print(f"[cond 3-1]: [{t}] pre_ema200:{pre_ema200:,.2f} < last_ema200:{last_ema200:,.2f} < candle : {last_ha_close:,.2f}")
-                            
-                        #     if last_ha_open < last_ha_close : 
-                        #         print(f"[cond 3-2]: [{t}] 캔들시가:{last_ha_open:,.2f} < 캔들종가:{last_ha_close:,.2f}")
-
                         if last_ta_rsi < 60 :
                             # print(f"[cond 4]: [{t}] [RSI]:{last_ta_rsi:,.2f} < 60")                        
                             
-                            if df_15_low1 < Low_Bol or df_15_low2 < Low_Bol :
+                            if df_15_low1 < Low_Bol1 or df_15_low2 < Low_Bol2 :
                                 print(f"[cond 5]: [{t}] 15분 1봉 또는 2봉전에 볼린저밴드 하단 터치")
                                 # send_discord_message(f"[cond 5]: [{t}] 15분 1봉 또는 2봉전에 볼린저밴드 하단 터치")
 
                                 # send_discord_message(f"[test 6]: [{t}] [last s_RSI]:{last_ta_srsi:,.2f}")
                                 if last_ta_srsi < 0.2:
-                                    print(f"[cond 6]: [{t}]  [last s_RSI]:{last_ta_srsi:,.2f} <= 0.2")
+                                    print(f"[cond 6]: [{t}]  [last s_RSI]:{last_ta_srsi:,.2f} < 0.2")
                                     send_discord_message(f"[cond 6]: [{t}] [last s_RSI]:{last_ta_srsi:,.2f} <= 0.2")
                                     if df_15_open < df_15_close:
-                                        send_discord_message(f"[cond 7]: [{t}] 현재가 양봉 / 시가:{{df_15_open} < 종가: {df_15_close}")
+                                        send_discord_message(f"[cond 7]: [{t}] 현재가 양봉 / 시가:{df_15_open} < 종가: {df_15_close}")
                                         filtered_tickers.append(t)
-                                
-
-                                    # if Low_Bol * 1.03 < Up_Bol :
-                                        # print(f"[cond 6]: [{t}] 볼린저밴드 상하단 폭 3% 이상")
-                                        # send_discord_message(f"[cond 6]: [{t}] 볼린저밴드 상하단 폭 3% 이상")
-                                            
-
-                                        # if Low_Bol*1.005 < cur_price :
-                                        #     print(f"[cond 8]: [{t}] 현재가가 볼린저밴드 1.005%이상 상승")
-                                        #     send_discord_message(f"[cond 8]: [{t}] 현재가가 볼린저밴드 1.005%이상 상승")
-
-                                        # ai_decision = get_ai_decision(t)  
-                                        # send_discord_message(f"[cond 7]: [{t}] AI: {ai_decision}")
-                                        # if ai_decision == "BUY" :
-
-            
+                                        
         except Exception as e:
             send_discord_message(f"filtered_tickers/Error processing ticker {t}: {e}")
             time.sleep(5)  # API 호출 제한을 위한 대기
@@ -498,7 +335,7 @@ def trade_buy(ticker, k):
     
     krw = get_balance("KRW")
     buyed_amount = get_balance(ticker.split("-")[1]) 
-    max_retries = 20  
+    max_retries = 5  
     buy_size = min(2_500_000,krw*0.9995)
     
     attempt = 0  # 시도 횟수 초기화
@@ -513,15 +350,12 @@ def trade_buy(ticker, k):
                 # send_discord_message(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / 목표가:{target_price:,.2f} -(시도 {attempt + 1}/{max_retries})")
 
                 if current_price < target_price :
-                    # print(f"매수 시도: {ticker}")
-                    last_stoch_rsi = ta_stochastic_rsi(ticker).iloc[-1]
-                    last_rsi = get_ta_rsi(ticker,14).iloc[-1]
                     buy_attempts = 3
                     for i in range(buy_attempts):
                         try:
                             buy_order = upbit.buy_market_order(ticker, buy_size)
                             print(f"매수 성공: [{ticker}]")
-                            send_discord_message(f"매수 성공: [{ticker}] 현재가:{current_price:,.2f} < 목표가:{target_price:,.2f} / RSI {last_rsi:,.2f} /s_RSI {last_stoch_rsi:,.2f}")
+                            send_discord_message(f"매수 성공: [{ticker}] 현재가:{current_price:,.2f} < 목표가:{target_price:,.2f}")
                             return buy_order
 
                         except Exception as e:
@@ -536,7 +370,7 @@ def trade_buy(ticker, k):
                     attempt += 1  # 시도 횟수 증가
                     time.sleep(60)
 
-        print(f"10회 시도완료: [{ticker}], 목표가 범위에 도달하지 못함")
+        print(f"5회 시도완료: [{ticker}], 목표가 범위에 도달하지 못함")
         return "Price not in range after max attempts", None
             
 def trade_sell(ticker):
@@ -550,7 +384,7 @@ def trade_sell(ticker):
     upper_band = get_bollinger_upper_band(ticker).iloc[-1]
 
     selltime = datetime.now()
-    sell_start = selltime.replace(hour=8, minute=30 , second=00, microsecond=0)
+    sell_start = selltime.replace(hour=8, minute=50 , second=00, microsecond=0)
     sell_end = selltime.replace(hour=8, minute=59, second=50, microsecond=0)
 
     max_attempts = 20  # 최대 조회 횟수
@@ -617,11 +451,10 @@ def send_profit_report():
                 avg_buy_price = float(b['avg_buy_price'])
                 current_price = pyupbit.get_current_price(ticker)
                 last_stoch_rsi = ta_stochastic_rsi(ticker).iloc[-1]
-                last_rsi = get_ta_rsi(ticker,14).iloc[-1]
 
                 if buyed_amount > 0:
                     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
-                    report_message += f"[{b['currency']}] 수익률:{profit_rate:.1f}% RSI:{last_rsi:,.2f} s_RSI:{last_stoch_rsi:.2f}\n"
+                    report_message += f"[{b['currency']}] 수익률:{profit_rate:.1f}% s_RSI:{last_stoch_rsi:.2f}\n"
 
             send_discord_message(report_message)  # 슬랙으로 보고서 전송
 
@@ -712,7 +545,7 @@ def additional_buy_logic():
 
                 # 조건 체크: 수익률이 -6% 이하이고 현재가가 볼린저 밴드 하단보다 작으면 추가 매수
                 if profit_rate <= -6 and current_price < low_band:
-                    # print(f'매수 조건 만족: {ticker} / 현재가: {current_price} / 볼린저 밴드 하단: {low_band}')
+                    # print(f'매수 조건 만족: {ticker} / 현재가: {current_price:,.0f} / 볼린저 밴드 하단: {low_band}')
                     buy_size = 2_500_000  # 추가 매수할 금액 설정
                     result = upbit.buy_market_order(ticker, buy_size)  # 추가 매수 실행
 
@@ -721,8 +554,8 @@ def additional_buy_logic():
                         send_discord_message(f"추가 매수: {ticker} / 수익률 : {profit_rate:,.1f} / 수량: {buy_size}")
 
                 else:
-                    print(f'조건 미충족: {ticker} / 현재가: {current_price} / 수익률 : {profit_rate:,.2f}')
-        time.sleep(60)
+                    print(f'조건 미충족: {ticker} / 현재가: {current_price:,.0f} / 수익률 : {profit_rate:,.2f}')
+        time.sleep(180)
 
 # 매도 쓰레드 생성
 selling_thread = threading.Thread(target=selling_logic)
