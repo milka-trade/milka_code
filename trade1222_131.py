@@ -55,8 +55,8 @@ def get_balance(ticker):
     return 0
 
 def get_ema(ticker, window):
-    # df = load_ohlcv(ticker)
-    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
+    df = load_ohlcv(ticker)
+    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
 
     if df is not None and not df.empty:
         return df['close'].ewm(span=window, adjust=False).mean()  # EMA 계산 후 마지막 값 반환
@@ -67,8 +67,8 @@ def get_ema(ticker, window):
 def get_best_k(ticker):
     bestK = 0.1  # 초기 K 값
     interest = 0  # 초기 수익률
-    # df = load_ohlcv(ticker)  # 데이터 로드
-    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=20)
+    df = load_ohlcv(ticker)  # 데이터 로드
+    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=20)
 
     if df is None or df.empty:
         return bestK  # 데이터가 없으면 초기 K 반환
@@ -90,8 +90,8 @@ def get_best_k(ticker):
     return bestK
 
 def get_ta_rsi(ticker, period):
-    # df_rsi = load_ohlcv(ticker)
-    df_rsi = pyupbit.get_ohlcv(ticker, interval="minute15", count=50) 
+    df_rsi = load_ohlcv(ticker)
+    # df_rsi = pyupbit.get_ohlcv(ticker, interval="minute15", count=50) 
     if df_rsi is None or df_rsi.empty:
         return None  # 데이터가 없으면 None 반환
 
@@ -102,8 +102,8 @@ def get_ta_rsi(ticker, period):
 
 def ta_stochastic_rsi(ticker):
     # 데이터 가져오기
-    # df = load_ohlcv(ticker)
-    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50) 
+    df = load_ohlcv(ticker)
+    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50) 
     if df is None or df.empty:
         return None  # 데이터가 없으면 None 반환
     
@@ -170,8 +170,8 @@ def get_dynamic_threshold(tickers):
 
 def get_bollinger_upper_band(ticker, window=20, std_dev=2):
     """특정 티커의 볼린저 밴드 상단값을 가져오는 함수"""
-    # df = load_ohlcv(ticker)
-    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
+    df = load_ohlcv(ticker)
+    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
     if df is None or df.empty:
         return None  # 데이터가 없으면 None 반환
 
@@ -185,8 +185,8 @@ def get_bollinger_upper_band(ticker, window=20, std_dev=2):
 
 def get_bollinger_lower_band(ticker, window=20, std_dev=2):
     """특정 티커의 볼린저 밴드 하단값을 가져오는 함수"""
-    # df = load_ohlcv(ticker)
-    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
+    df = load_ohlcv(ticker)
+    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
     if df is None or df.empty:
         return None  # 데이터가 없으면 None 반환
 
@@ -213,8 +213,8 @@ def filtered_tickers(tickers, held_coins):
             if df_day is None or df_day.empty or 'high' not in df_day or 'low' not in df_day or 'open' not in df_day:
                 continue  
             
-            df_15 = pyupbit.get_ohlcv(t, interval="minute15", count=3)
-            # df_15 = load_ohlcv(t)
+            # df_15 = pyupbit.get_ohlcv(t, interval="minute15", count=3)
+            df_15 = load_ohlcv(t)
             
             if len(df_day) >= 3:
                 day_value_1 = df_day['value'].iloc[-1]      #일봉 9시 기준 당일 거래량
@@ -309,8 +309,8 @@ def get_best_ticker():
 
     for ticker in filtered_list:   # 조회할 코인 필터링
         k = get_best_k(ticker)
-        # df = load_ohlcv(ticker)
-        df = pyupbit.get_ohlcv(ticker, interval="minute15", count=20) 
+        df = load_ohlcv(ticker)
+        # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=20) 
         if df is None or df.empty:
             continue
     
