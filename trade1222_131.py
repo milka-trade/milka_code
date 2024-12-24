@@ -417,11 +417,11 @@ def filtered_tickers(tickers, held_coins):
                                 # send_discord_message(f"[cond 5]: [{t}] 15분 1봉 또는 2봉전에 볼린저밴드 하단 터치")
 
                                 # send_discord_message(f"[test 6]: [{t}] [last s_RSI]:{last_ta_srsi:,.2f}")
-                                if last_ta_srsi < 0.15:
-                                    print(f"[cond 6]: [{t}]  [last s_RSI]:{last_ta_srsi:,.2f} <= 0.15")
-                                    send_discord_message(f"[cond 6]: [{t}] [last s_RSI]:{last_ta_srsi:,.2f} <= 0.15")
+                                if last_ta_srsi < 0.2:
+                                    print(f"[cond 6]: [{t}]  [last s_RSI]:{last_ta_srsi:,.2f} <= 0.2")
+                                    send_discord_message(f"[cond 6]: [{t}] [last s_RSI]:{last_ta_srsi:,.2f} <= 0.2")
                                     if df_15_open < df_15_close:
-                                        send_discord_message(f"[cond 7]: [{t}] 현재가 양봉")
+                                        send_discord_message(f"[cond 7]: [{t}] 현재가 양봉 / 시가:{{df_15_open} < 종가: {df_15_close}")
                                         filtered_tickers.append(t)
                                 
 
@@ -499,7 +499,7 @@ def trade_buy(ticker, k):
     krw = get_balance("KRW")
     buyed_amount = get_balance(ticker.split("-")[1]) 
     max_retries = 20  
-    buy_size = min(1500000,krw*0.9995)
+    buy_size = min(2_500_000,krw*0.9995)
     
     attempt = 0  # 시도 횟수 초기화
     target_price = None  # target_price 초기화
@@ -590,7 +590,7 @@ def trade_sell(ticker):
                 # sell_order = upbit.sell_limit_order(ticker, buyed_amount, sell_price)
 
                 # send_discord_message(f"[매도시도 초과]: [{ticker}] / 수익률: {profit_rate:.2f}% / ema20: {last_ema20:,.2f} < {current_price:,.2f} ")
-                send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} / 현재가가 ema20 이상")
+                send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} / 현재가가 ema20 98% 이상")
                 print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} / 현재가가 ema20 이상")
                 return sell_order   
             else:
@@ -713,7 +713,7 @@ def additional_buy_logic():
                 # 조건 체크: 수익률이 -6% 이하이고 현재가가 볼린저 밴드 하단보다 작으면 추가 매수
                 if profit_rate <= -6 and current_price < low_band:
                     # print(f'매수 조건 만족: {ticker} / 현재가: {current_price} / 볼린저 밴드 하단: {low_band}')
-                    buy_size = 1_500_000  # 추가 매수할 금액 설정
+                    buy_size = 2_500_000  # 추가 매수할 금액 설정
                     result = upbit.buy_market_order(ticker, buy_size)  # 추가 매수 실행
 
                     # 매수 결과 메시지 전송
