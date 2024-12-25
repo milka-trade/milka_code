@@ -185,8 +185,8 @@ def get_bollinger_upper_band(ticker, window=20, std_dev=2):
 
 def get_bollinger_lower_band(ticker, window=20, std_dev=2):
     """특정 티커의 볼린저 밴드 하단값을 가져오는 함수"""
-    df = load_ohlcv(ticker)
-    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
+    # df = load_ohlcv(ticker)
+    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
     if df is None or df.empty:
         return None  # 데이터가 없으면 None 반환
 
@@ -270,18 +270,20 @@ def filtered_tickers(tickers, held_coins):
                 if last_ta_rsi < 65 :
                     # print(f"[cond 4]: [{t}] [RSI]:{last_ta_rsi:,.2f} < 60")
                            
-                    if Low_Bol3 >= df_15_close3 and Low_Bol2 >= df_15_close2 and Low_Bol1 > cur_price and Low_Bol3 > Low_Bol2 > Low_Bol1 :
-                        print(f"[cond 5]: [{t}] 볼린저 밴드 하향 / 종가 볼밴 터치 / 볼밴 하단[-1] : {Low_Bol1:,.2f} > 현재가 : {cur_price:,.2f}")
-                        send_discord_message(f"[cond 5]: [{t}] 볼린저 밴드 하향 / 종가 3연속 볼밴 터치 / 볼밴 하단[-1] : {Low_Bol1:,.2f} > 현재가 : {cur_price:,.2f}")
+                    if last_ta_srsi < 0.2:
+                        print(f"[cond 6]: [{t}]  [last s_RSI]:{last_ta_srsi:,.2f} < 0.2")
+                        # send_discord_message(f"[cond 5]: [{t}] [last s_RSI]:{last_ta_srsi:,.2f} <0.2")
+                            
+                        if Low_Bol3 >= df_15_low3 and Low_Bol2 >= df_15_low2 and Low_Bol1 > cur_price and Low_Bol3 > Low_Bol2 > Low_Bol1 :
+                            print(f"[cond 5]: [{t}] 볼린저 밴드 하향 / 볼밴 연속 터치 / 볼밴 하단가 : {Low_Bol1:,.2f} > 현재가 : {cur_price:,.2f}")
+                            send_discord_message(f"[cond 5]: [{t}] 볼린저 밴드 하향 / 볼밴 연속 터치 / 볼밴 하단가 : {Low_Bol1:,.2f} > 현재가 : {cur_price:,.2f}")
+                            filtered_tickers.append(t)
 
-                        if last_ta_srsi < 0.2:
-                            print(f"[cond 6]: [{t}]  [last s_RSI]:{last_ta_srsi:,.2f} < 0.2")
-                            send_discord_message(f"[cond 5]: [{t}] [last s_RSI]:{last_ta_srsi:,.2f} <0.2") 
                                     
                                     # if Low_Bol1 < cur_price < df_15_open*1.01:
                                     #     send_discord_message(f"[cond 7]: [{t}] 현재가 볼린저밴드하단 이상 / bol1:{Low_Bol1} < 현재가: {cur_price}")
                                     #     print(f"[cond 7]: [{t}] 현재가 볼린저밴드하단 이상 / bol1:{Low_Bol1} < 현재가: {cur_price}")
-                            filtered_tickers.append(t)
+                            
                                         
         except Exception as e:
             send_discord_message(f"filtered_tickers/Error processing ticker {t}: {e}")
