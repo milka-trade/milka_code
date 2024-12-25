@@ -253,6 +253,7 @@ def filtered_tickers(tickers, held_coins):
             Low_Bol1 = get_bollinger_lower_band(t).iloc[-1]
             Low_Bol2 = get_bollinger_lower_band(t).iloc[-2]
             Low_Bol3 = get_bollinger_lower_band(t).iloc[-3]
+            Low_Bol4 = get_bollinger_lower_band(t).iloc[-4]
             # Up_Bol = get_bollinger_upper_band(t).iloc[-1]
 
             # print(f"test1: {t} / 일봉 거래대금 {day_value_1:,.0f}")
@@ -268,15 +269,15 @@ def filtered_tickers(tickers, held_coins):
                         if last_ta_rsi < 65 :
                             # print(f"[cond 4]: [{t}] [RSI]:{last_ta_rsi:,.2f} < 60")
                            
-                            if last_ta_srsi < 0.2:
-                                print(f"[cond 5]: [{t}]  [last s_RSI]:{last_ta_srsi:,.2f} < 0.2")
-                                # send_discord_message(f"[cond 5]: [{t}] [last s_RSI]:{last_ta_srsi:,.2f} <0.2") 
+                            # print(f"[test 6]: [{t}] 볼린저밴드 하단 터치 / 볼린저밴드2: {Low_Bol2:,.2f} > 볼린저밴드1: {Low_Bol1:,.2f} > 현재가: {cur_price:,.2f}")
+                            if Low_Bol3 > df_15_close3 and Low_Bol2 > df_15_close2 and Low_Bol1 > cur_price :
+                                print(f"[cond 5]: [{t}] 볼밴 하단[-3] > 종가[-3] / 볼밴 하단[-2] > 종가[-2] / 볼밴 하단[-1] : {Low_Bol1:,.2f} > 현재가 : {cur_price:,.2f}")
+                                # send_discord_message(f"[cond 5]: [{t}] 볼밴 하단[-3] > 종가[-3] / 볼밴 하단[-2] > 종가[-2] / 볼밴 하단[-1] : {Low_Bol1:,.2f} > 현재가 : {cur_price:,.2f}")
+
+                                if last_ta_srsi < 0.2:
+                                    print(f"[cond 6]: [{t}]  [last s_RSI]:{last_ta_srsi:,.2f} < 0.2")
+                                    send_discord_message(f"[cond 5]: [{t}] [last s_RSI]:{last_ta_srsi:,.2f} <0.2") 
                                     
-                                print(f"[test 6]: [{t}] 볼린저밴드 하단 터치 / 볼린저밴드2: {Low_Bol2:,.2f} > 볼린저밴드1: {Low_Bol1:,.2f} > 현재가: {cur_price:,.2f}")
-                                if Low_Bol3 > Low_Bol2 >= Low_Bol1 > cur_price :
-                                    print(f"[cond 6]: [{t}] 볼린저밴드 하단 터치 / 볼린저밴드3: {Low_Bol3:,.2f} > 볼린저밴드2: {Low_Bol2:,.2f} > 볼린저밴드1: {Low_Bol1:,.2f} > 현재가: {cur_price:,.2f}")
-                                    send_discord_message(f"[cond 6]: [{t}] 볼린저밴드 하단 터치 / 볼린저밴드3: {Low_Bol3:,.2f} > 볼린저밴드2: {Low_Bol2:,.2f} > 볼린저밴드1: {Low_Bol1:,.2f} > 현재가: {cur_price:,.2f}")
-                            
                                     # if Low_Bol1 < cur_price < df_15_open*1.01:
                                     #     send_discord_message(f"[cond 7]: [{t}] 현재가 볼린저밴드하단 이상 / bol1:{Low_Bol1} < 현재가: {cur_price}")
                                     #     print(f"[cond 7]: [{t}] 현재가 볼린저밴드하단 이상 / bol1:{Low_Bol1} < 현재가: {cur_price}")
