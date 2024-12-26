@@ -567,29 +567,32 @@ def buying_logic():
 
 def additional_buy_logic():
     while True:
-        balances = upbit.get_balances()  # 잔고 조회
-        for b in balances:
-            if b['currency'] not in ["KRW", "QI", "ONX", "ETHF", "ETHW", "PURSE"]:  # 특정 통화 제외
-                ticker = f"KRW-{b['currency']}"  # 현재가 조회를 위한 티커 설정
-                current_price = pyupbit.get_current_price(ticker)  # 현재가 조회
+        krw_balance = get_balance("KRW")  # 현재 KRW 잔고 조회
+        if krw_balance > 1_000_000: 
+            balances = upbit.get_balances()  # 잔고 조회
+            
+            for b in balances:
+                if b['currency'] not in ["KRW", "QI", "ONX", "ETHF", "ETHW", "PURSE"]:  # 특정 통화 제외
+                    ticker = f"KRW-{b['currency']}"  # 현재가 조회를 위한 티커 설정
+                    current_price = pyupbit.get_current_price(ticker)  # 현재가 조회
 
-                avg_buy_price = upbit.get_avg_buy_price(b['currency'])  # 평균 매수 가격 조회
-                profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
+                    avg_buy_price = upbit.get_avg_buy_price(b['currency'])  # 평균 매수 가격 조회
+                    profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
 
-                low_band = get_bollinger_lower_band(ticker).iloc[-1]  # 볼린저 밴드 하단값 조회
+                    low_band = get_bollinger_lower_band(ticker).iloc[-1]  # 볼린저 밴드 하단값 조회
 
-                if profit_rate < -4 and current_price < low_band * 0.99:     # 조건 체크: 수익률이 -3% 이하 현재가가 볼린저 밴드 98% 하단 미만 추가 매수
-                    krw = get_balance("KRW")
-                    # print(f'매수 조건 만족: {ticker} / 현재가: {current_price:,.0f} / 볼린저 밴드 하단: {low_band}')
-                    buy_size = min(1_500_000, krw*0.9995)  # 추가 매수할 금액 설정
-                    result = upbit.buy_market_order(ticker, buy_size)  # 추가 매수 실행
+                    if profit_rate < -4 and current_price < low_band * 0.99:     # 조건 체크: 수익률이 -3% 이하 현재가가 볼린저 밴드 98% 하단 미만 추가 매수
+                        krw = get_balance("KRW")
+                        # print(f'매수 조건 만족: {ticker} / 현재가: {current_price:,.0f} / 볼린저 밴드 하단: {low_band}')
+                        buy_size = min(1_500_000, krw*0.9995)  # 추가 매수할 금액 설정
+                        result = upbit.buy_market_order(ticker, buy_size)  # 추가 매수 실행
 
-                    # 매수 결과 메시지 전송
-                    if result:
-                        send_discord_message(f"추가 매수: {ticker} / 수익률 : {profit_rate:,.1f} / 수량: {buy_size}")
+                        # 매수 결과 메시지 전송
+                        if result:
+                            send_discord_message(f"추가 매수: {ticker} / 수익률 : {profit_rate:,.1f} / 수량: {buy_size}")
 
-                else:
-                    print(f'조건 미충족: {ticker} / 현재가: {current_price:,.0f} / 수익률 : {profit_rate:,.2f}')
+                    else:
+                        print(f'조건 미충족: {ticker} / 현재가: {current_price:,.0f} / 수익률 : {profit_rate:,.2f}')
         time.sleep(180)
 
 # 매도 쓰레드 생성
