@@ -614,6 +614,6 @@ selling_thread.start()
 buying_thread = threading.Thread(target=buying_logic)
 buying_thread.start()
 
-# 추가 매수 쓰레드 생성
-additional_buy_thread = threading.Thread(target=additional_buy_logic)
-additional_buy_thread.start()
+# # 추가 매수 쓰레드 생성
+# additional_buy_thread = threading.Thread(target=additional_buy_logic)
+# additional_buy_thread.start()
