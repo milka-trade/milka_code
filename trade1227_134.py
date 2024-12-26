@@ -91,8 +91,8 @@ def get_best_k(ticker):
     return bestK
 
 def get_rsi(ticker, period):
-    df_rsi = load_ohlcv(ticker)
-    # df_rsi = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
+    # df_rsi = load_ohlcv(ticker)
+    df_rsi = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
     if df_rsi is None or df_rsi.empty:
         return None  # 데이터가 없으면 None 반환
 
@@ -114,9 +114,9 @@ def get_rsi(ticker, period):
 
 def stochastic_rsi(ticker, smooth_k=3, smooth_d=3):
     # 데이터 가져오기
-    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
-    if df is None or df.empty:
-        return None  # 데이터가 없으면 None 반환
+    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
+    # if df is None or df.empty:
+        # return None  # 데이터가 없으면 None 반환
 
     # # RSI 계산
     # delta = df['close'].diff()
