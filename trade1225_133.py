@@ -100,27 +100,76 @@ def get_ta_rsi(ticker, period):
 
     return rsi if not rsi.empty else None  # 마지막 RSI 값 반환
 
+# def ta_stochastic_rsi(ticker):
+#     # 데이터 가져오기
+#     df = load_ohlcv(ticker)
+#     # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=100) 
+#     if df is None or df.empty:
+#         return None  # 데이터가 없으면 None 반환
+    
+#     rsi = ta.momentum.RSIIndicator(df['close'], window=14).rsi()  # RSI 계산
+
+#     # Stochastic RSI 계산
+#     min_rsi = rsi.rolling(window=14).min()
+#     max_rsi = rsi.rolling(window=14).max()
+
+#     # NaN 제거
+#     rsi = rsi.bfill()  # 이후 값으로 NaN 대체
+#     min_rsi = min_rsi.bfill()
+#     max_rsi = max_rsi.bfill()
+    
+#     stoch_rsi = (rsi - min_rsi) / (max_rsi - min_rsi)
+#     stoch_rsi = stoch_rsi.replace([np.inf, -np.inf], np.nan)  # 무한대를 np.nan으로 대체
+#     stoch_rsi = stoch_rsi.fillna(0)  # NaN을 0으로 대체 (필요 시)
+
+#     # Stochastic RSI 값만 반환 
+#     return stoch_rsi if not stoch_rsi.empty else 0
+
+# def ta_stochastic_rsi(ticker):
+#     # 데이터 가져오기
+#     # df = load_ohlcv(ticker)
+#     df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200) 
+#     if df is None or df.empty:
+#         return None  # 데이터가 없으면 None 반환
+    
+#     # RSI 계산
+#     rsi = ta.momentum.RSIIndicator(df['close'], window=14).rsi()
+
+#     # Stochastic RSI 계산
+#     min_rsi = rsi.rolling(window=14).min().dropna()
+#     max_rsi = rsi.rolling(window=14).max().dropna()
+    
+#      # Stochastic RSI 계산
+#     stoch_rsi = (rsi.loc[min_rsi.index] - min_rsi) / (max_rsi - min_rsi)
+    
+#     # 무한대 및 NaN 처리
+#     stoch_rsi = stoch_rsi.replace([np.inf, -np.inf], np.nan).fillna(0)
+
+#     # Stochastic RSI 값만 반환 
+#     return stoch_rsi if not stoch_rsi.empty else 0
+
 def ta_stochastic_rsi(ticker):
     # 데이터 가져오기
     df = load_ohlcv(ticker)
-    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=100) 
     if df is None or df.empty:
         return None  # 데이터가 없으면 None 반환
-    
-    rsi = ta.momentum.RSIIndicator(df['close'], window=14).rsi()  # RSI 계산
+    # RSI 계산
+    rsi = ta.momentum.RSIIndicator(df['close'], window=14).rsi()
+    rsi = rsi.dropna()  # NaN 제거
+
 
     # Stochastic RSI 계산
-    min_rsi = rsi.rolling(window=14).min()
-    max_rsi = rsi.rolling(window=14).max()
+    min_rsi = rsi.rolling(window=14).min().dropna()
+    max_rsi = rsi.rolling(window=14).max().dropna()
 
-    # NaN 제거
-    rsi = rsi.bfill()  # 이후 값으로 NaN 대체
-    min_rsi = min_rsi.bfill()
-    max_rsi = max_rsi.bfill()
-    
-    stoch_rsi = (rsi - min_rsi) / (max_rsi - min_rsi)
-    stoch_rsi = stoch_rsi.replace([np.inf, -np.inf], np.nan)  # 무한대를 np.nan으로 대체
-    stoch_rsi = stoch_rsi.fillna(0)  # NaN을 0으로 대체 (필요 시)
+     # Stochastic RSI 계산
+    stoch_rsi = (rsi.loc[min_rsi.index] - min_rsi) / (max_rsi - min_rsi)
+
+    # stoch_rsi = (rsi - min_rsi) / (max_rsi - min_rsi)
+    # stoch_rsi = stoch_rsi.replace([np.inf, -np.inf], np.nan)  # 무한대를 np.nan으로 대체
+
+    # 무한대 및 NaN 처리
+    stoch_rsi = stoch_rsi.replace([np.inf, -np.inf], np.nan).fillna(0)
 
     # Stochastic RSI 값만 반환 
     return stoch_rsi if not stoch_rsi.empty else 0
@@ -178,24 +227,31 @@ def get_bollinger_upper_band(ticker, window=20, std_dev=2):
     # 볼린저 밴드 계산
     df['Upper_Band'] = ta.volatility.BollingerBands(df['close'], window=window, window_dev=std_dev).bollinger_hband()
     
+    # NaN 처리 (필요시)
+    df['Upper_Band'] = df['Upper_Band'].dropna()  # NaN 값 제거
+    
     # 마지막 상단 밴드 값 반환
-    upper_band = df['Upper_Band']
+    # upper_band = df['Upper_Band']
+    upper_band = df['Upper_Band'] if not df['Upper_Band'].empty else None
 
     return upper_band
 
 def get_bollinger_lower_band(ticker, window=20, std_dev=2):
     """특정 티커의 볼린저 밴드 하단값을 가져오는 함수"""
     # df = load_ohlcv(ticker)
-    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=100)
-    if df is None or df.empty:
+    df_price = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
+    if df_price is None or df_price.empty:
         return None  # 데이터가 없으면 None 반환
 
     # 볼린저 밴드 계산
-    df['Lower_Band'] = ta.volatility.BollingerBands(df['close'], window=window, window_dev=std_dev).bollinger_lband()
+    df_price['Lower_Band'] = ta.volatility.BollingerBands(df_price['close'], window=window, window_dev=std_dev).bollinger_lband()
+    
+    # NaN 처리 (필요시)
+    df_price['Lower_Band'] = df_price['Lower_Band'].dropna()  # NaN 값 제거
     
     # 마지막 하단 밴드 값 반환
-    lower_band = df['Lower_Band']
-
+    lower_band = df_price['Lower_Band'] if not df_price['Lower_Band'].empty else None
+    
     return lower_band
 
 def filtered_tickers(tickers, held_coins):
@@ -271,9 +327,10 @@ def filtered_tickers(tickers, held_coins):
                     # print(f"[cond 4]: [{t}] [RSI]:{last_ta_rsi:,.2f} < 60")
                            
                     # print(f"[test]: [{t}] 볼밴 하단가 : {Low_Bol1:,.2f} > 현재가 : {cur_price:,.2f}")    
-                    if Low_Bol3 >= df_15_low3 and Low_Bol2 >= df_15_low2 and Low_Bol1 > cur_price and Low_Bol3 > Low_Bol2 > Low_Bol1 :
-                        print(f"[cond 5]: [{t}] 볼린저 밴드 하향 / 볼밴 연속 터치 / 볼밴 하단가 : {Low_Bol1:,.2f} > 현재가 : {cur_price:,.2f}")
-                        send_discord_message(f"[cond 5]: [{t}] 볼린저 밴드 하향 / 볼밴 연속 터치 / 볼밴 하단가 : {Low_Bol1:,.2f} > 현재가 : {cur_price:,.2f}")
+                    if Low_Bol3 >= df_15_low3 and Low_Bol2 >= df_15_low2 and Low_Bol1 > df_15_low2 and Low_Bol3 > Low_Bol2 > Low_Bol1 :
+                        if Low_Bol1 < cur_price < Low_Bol1*1.01 :
+                            print(f"[cond 5]: [{t}] 볼린저 밴드 하향 / 볼밴 연속 터치 / 볼밴 하단가 : {Low_Bol1:,.2f} < 현재가 : {cur_price:,.2f}")
+                            send_discord_message(f"[cond 5]: [{t}] 볼린저 밴드 하향 / 볼밴 연속 터치 / 볼밴 하단가 : {Low_Bol1:,.2f} < 현재가 : {cur_price:,.2f}")
 
                         if last_ta_srsi < 0.2:
                             print(f"[cond 6]: [{t}]  [last s_RSI]:{last_ta_srsi:,.2f} < 0.2")
