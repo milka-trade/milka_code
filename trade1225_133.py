@@ -7,6 +7,7 @@ import os
 from dotenv import load_dotenv
 import requests
 import ta
+import pandas as pd
 
 load_dotenv()
 
@@ -55,8 +56,8 @@ def get_balance(ticker):
     return 0
 
 def get_ema(ticker, window):
-    df = load_ohlcv(ticker)
-    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
+    # df = load_ohlcv(ticker)
+    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
 
     if df is not None and not df.empty:
         return df['close'].ewm(span=window, adjust=False).mean()  # EMA 계산 후 마지막 값 반환
@@ -67,8 +68,8 @@ def get_ema(ticker, window):
 def get_best_k(ticker):
     bestK = 0.1  # 초기 K 값
     interest = 0  # 초기 수익률
-    df = load_ohlcv(ticker)  # 데이터 로드
-    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=20)
+    # df = load_ohlcv(ticker)  # 데이터 로드
+    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=10)
 
     if df is None or df.empty:
         return bestK  # 데이터가 없으면 초기 K 반환
@@ -91,93 +92,57 @@ def get_best_k(ticker):
 
 def get_ta_rsi(ticker, period):
     df_rsi = load_ohlcv(ticker)
-    # df_rsi = pyupbit.get_ohlcv(ticker, interval="minute15", count=50) 
     if df_rsi is None or df_rsi.empty:
         return None  # 데이터가 없으면 None 반환
 
-    # TA 라이브러리를 사용하여 RSI 계산
-    rsi = ta.momentum.RSIIndicator(df_rsi['close'], window=period).rsi()
+    # 가격 변화량 계산
+    delta = df_rsi['close'].diff()
+
+    # 상승분과 하락분 계산
+    gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+
+    # RSI 계산
+    rs = gain / loss
+    rsi = 100 - (100 / (1 + rs))
 
     return rsi if not rsi.empty else None  # 마지막 RSI 값 반환
 
-# def ta_stochastic_rsi(ticker):
-#     # 데이터 가져오기
-#     df = load_ohlcv(ticker)
-#     # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=100) 
-#     if df is None or df.empty:
-#         return None  # 데이터가 없으면 None 반환
-    
-#     rsi = ta.momentum.RSIIndicator(df['close'], window=14).rsi()  # RSI 계산
-
-#     # Stochastic RSI 계산
-#     min_rsi = rsi.rolling(window=14).min()
-#     max_rsi = rsi.rolling(window=14).max()
-
-#     # NaN 제거
-#     rsi = rsi.bfill()  # 이후 값으로 NaN 대체
-#     min_rsi = min_rsi.bfill()
-#     max_rsi = max_rsi.bfill()
-    
-#     stoch_rsi = (rsi - min_rsi) / (max_rsi - min_rsi)
-#     stoch_rsi = stoch_rsi.replace([np.inf, -np.inf], np.nan)  # 무한대를 np.nan으로 대체
-#     stoch_rsi = stoch_rsi.fillna(0)  # NaN을 0으로 대체 (필요 시)
-
-#     # Stochastic RSI 값만 반환 
-#     return stoch_rsi if not stoch_rsi.empty else 0
-
-# def ta_stochastic_rsi(ticker):
-#     # 데이터 가져오기
-#     # df = load_ohlcv(ticker)
-#     df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200) 
-#     if df is None or df.empty:
-#         return None  # 데이터가 없으면 None 반환
-    
-#     # RSI 계산
-#     rsi = ta.momentum.RSIIndicator(df['close'], window=14).rsi()
-
-#     # Stochastic RSI 계산
-#     min_rsi = rsi.rolling(window=14).min().dropna()
-#     max_rsi = rsi.rolling(window=14).max().dropna()
-    
-#      # Stochastic RSI 계산
-#     stoch_rsi = (rsi.loc[min_rsi.index] - min_rsi) / (max_rsi - min_rsi)
-    
-#     # 무한대 및 NaN 처리
-#     stoch_rsi = stoch_rsi.replace([np.inf, -np.inf], np.nan).fillna(0)
-
-#     # Stochastic RSI 값만 반환 
-#     return stoch_rsi if not stoch_rsi.empty else 0
-
-def ta_stochastic_rsi(ticker):
+def stochastic_rsi(ticker):
     # 데이터 가져오기
-    df = load_ohlcv(ticker)
+    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200)
     if df is None or df.empty:
         return None  # 데이터가 없으면 None 반환
+
     # RSI 계산
-    rsi = ta.momentum.RSIIndicator(df['close'], window=14).rsi()
+    delta = df['close'].diff()
+    gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+
+    # RSI 계산
+    rs = gain / loss
+    rsi = 100 - (100 / (1 + rs))
+
+    # NaN 처리
     rsi = rsi.dropna()  # NaN 제거
 
+    # Stochastic RSI 계산
+    min_rsi = rsi.rolling(window=14).min()
+    max_rsi = rsi.rolling(window=14).max()
 
     # Stochastic RSI 계산
-    min_rsi = rsi.rolling(window=14).min().dropna()
-    max_rsi = rsi.rolling(window=14).max().dropna()
+    stoch_rsi = (rsi - min_rsi) / (max_rsi - min_rsi)
 
-     # Stochastic RSI 계산
-    stoch_rsi = (rsi.loc[min_rsi.index] - min_rsi) / (max_rsi - min_rsi)
+    # NaN 및 무한대 처리
+    stoch_rsi = stoch_rsi.replace([float('inf'), float('-inf')], pd.NA).fillna(0)
 
-    # stoch_rsi = (rsi - min_rsi) / (max_rsi - min_rsi)
-    # stoch_rsi = stoch_rsi.replace([np.inf, -np.inf], np.nan)  # 무한대를 np.nan으로 대체
-
-    # 무한대 및 NaN 처리
-    stoch_rsi = stoch_rsi.replace([np.inf, -np.inf], np.nan).fillna(0)
-
-    # Stochastic RSI 값만 반환 
+    # Stochastic RSI 값 반환
     return stoch_rsi if not stoch_rsi.empty else 0
 
 def get_atr(ticker, period):
     try:
-        # df_atr_day = pyupbit.get_ohlcv(ticker, interval="minute5", count=period)
-        df_atr_day = load_ohlcv(ticker)
+        df_atr_day = pyupbit.get_ohlcv(ticker, interval="minute15", count=20)
+        # df_atr_day = load_ohlcv(ticker)
         time.sleep(0.5)  # API 호출 제한을 위한 대기
     except Exception as e:
         print(f"API call failed: {e}")
@@ -219,39 +184,49 @@ def get_dynamic_threshold(tickers):
 
 def get_bollinger_upper_band(ticker, window=20, std_dev=2):
     """특정 티커의 볼린저 밴드 상단값을 가져오는 함수"""
-    df = load_ohlcv(ticker)
-    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
+    # df = load_ohlcv(ticker)
+    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
     if df is None or df.empty:
         return None  # 데이터가 없으면 None 반환
 
-    # 볼린저 밴드 계산
-    df['Upper_Band'] = ta.volatility.BollingerBands(df['close'], window=window, window_dev=std_dev).bollinger_hband()
-    
+    # 종가의 이동 평균 계산
+    df['SMA'] = df['close'].rolling(window=window).mean()
+
+    # 표준 편차 계산
+    df['STD'] = df['close'].rolling(window=window).std()
+
+    # 볼린저 밴드 상단값 계산
+    df['Upper_Band'] = df['SMA'] + (df['STD'] * std_dev)
+
     # NaN 처리 (필요시)
     df['Upper_Band'] = df['Upper_Band'].dropna()  # NaN 값 제거
-    
+
     # 마지막 상단 밴드 값 반환
-    # upper_band = df['Upper_Band']
     upper_band = df['Upper_Band'] if not df['Upper_Band'].empty else None
 
     return upper_band
 
 def get_bollinger_lower_band(ticker, window=20, std_dev=2):
     """특정 티커의 볼린저 밴드 하단값을 가져오는 함수"""
-    # df = load_ohlcv(ticker)
     df_price = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
     if df_price is None or df_price.empty:
         return None  # 데이터가 없으면 None 반환
 
-    # 볼린저 밴드 계산
-    df_price['Lower_Band'] = ta.volatility.BollingerBands(df_price['close'], window=window, window_dev=std_dev).bollinger_lband()
-    
+    # 종가의 이동 평균 계산
+    df_price['SMA'] = df_price['close'].rolling(window=window).mean()
+
+    # 표준 편차 계산
+    df_price['STD'] = df_price['close'].rolling(window=window).std()
+
+    # 볼린저 밴드 하단값 계산
+    df_price['Lower_Band'] = df_price['SMA'] - (df_price['STD'] * std_dev)
+
     # NaN 처리 (필요시)
     df_price['Lower_Band'] = df_price['Lower_Band'].dropna()  # NaN 값 제거
-    
+
     # 마지막 하단 밴드 값 반환
     lower_band = df_price['Lower_Band'] if not df_price['Lower_Band'].empty else None
-    
+
     return lower_band
 
 def filtered_tickers(tickers, held_coins):
@@ -293,7 +268,7 @@ def filtered_tickers(tickers, held_coins):
             ta_rsi = get_ta_rsi(t, 14)
             last_ta_rsi = ta_rsi.iloc[-1]
             
-            ta_stoch_rsi = ta_stochastic_rsi(t)   #스토캐스틱 RSI 계산
+            ta_stoch_rsi = stochastic_rsi(t)   #스토캐스틱 RSI 계산
             if ta_stoch_rsi.empty or len(ta_stoch_rsi) < 2:
                 raise ValueError("stoch_rsi : Stochastic RSI DataFrame is empty or has insufficient data.")
 
@@ -502,7 +477,7 @@ def send_profit_report():
                 buyed_amount = float(b['balance'])
                 avg_buy_price = float(b['avg_buy_price'])
                 current_price = pyupbit.get_current_price(ticker)
-                last_stoch_rsi = ta_stochastic_rsi(ticker).iloc[-1]
+                last_stoch_rsi = stochastic_rsi(ticker).iloc[-1]
 
                 if buyed_amount > 0:
                     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
@@ -615,5 +590,5 @@ buying_thread = threading.Thread(target=buying_logic)
 buying_thread.start()
 
 # # 추가 매수 쓰레드 생성
-# additional_buy_thread = threading.Thread(target=additional_buy_logic)
-# additional_buy_thread.start()
+additional_buy_thread = threading.Thread(target=additional_buy_logic)
+additional_buy_thread.start()
