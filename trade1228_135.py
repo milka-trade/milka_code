@@ -28,7 +28,7 @@ def load_ohlcv(ticker):
     global df_tickers
     if ticker not in df_tickers: 
         try:
-            df_tickers[ticker] = pyupbit.get_ohlcv(ticker, interval="minute15", count=200) 
+            df_tickers[ticker] = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
             if df_tickers[ticker] is None or df_tickers[ticker].empty:
                 print(f"load_ohlcv / No data returned for ticker: {ticker}")
                 send_discord_message(f"load_ohlcv / No data returned for ticker: {ticker}")
@@ -107,42 +107,60 @@ def get_rsi(ticker, period):
 
 def stoch_rsi(ticker):
     # 데이터 가져오기
-    df = load_ohlcv(ticker)
-    # df = pyupbit.get_ohlcv(ticker, interval="minute10", count=200) 
-    if df is None or df.empty:
-        return None  # 데이터가 없으면 None 반환
+    # df = load_ohlcv(ticker)
+    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200) 
+    # if df is None or df.empty:
+    #     return None  # 데이터가 없으면 None 반환
     
     # RSI 계산
-    rsi = ta.momentum.RSIIndicator(df['close'], window=14).rsi()
+    # rsi = ta.momentum.RSIIndicator(df['close'], window=14).rsi()
+    rsi = get_rsi(ticker, 14)
+    if rsi is None or rsi.empty:  # rsi가 None이거나 비어 있는 경우
+        print(f"{ticker}: RSI 데이터가 없음")
+        return None
 
-    # Stochastic RSI 계산
-    min_rsi = rsi.rolling(window=14).min()
-    max_rsi = rsi.rolling(window=14).max()
-    
-    # NaN 제거
-    rsi = rsi.bfill()  # 이후 값으로 NaN 대체
-    min_rsi = min_rsi.bfill()
-    max_rsi = max_rsi.bfill()
-    
-    stoch_rsi = (rsi - min_rsi) / (max_rsi - min_rsi)
-    stoch_rsi = stoch_rsi.replace([np.inf, -np.inf], np.nan)  # 무한대를 np.nan으로 대체
-    stoch_rsi = stoch_rsi.fillna(0)  # NaN을 0으로 대체 (필요 시)
+    try:
+        # Stochastic RSI 계산
+        min_rsi = rsi.rolling(window=14).min()
+        max_rsi = rsi.rolling(window=14).max()
+        
+        # # NaN 제거
+        rsi = rsi.bfill()  # 이후 값으로 NaN 대체
+        min_rsi = min_rsi.bfill()
+        max_rsi = max_rsi.bfill()
+        
+        stoch_rsi = (rsi - min_rsi) / (max_rsi - min_rsi)
+        stoch_rsi = stoch_rsi.replace([np.inf, -np.inf], np.nan)  # 무한대를 np.nan으로 대체
+        stoch_rsi = stoch_rsi.fillna(0)  # NaN을 0으로 대체 (필요 시)
 
-    # %K와 %D 계산
-    k_period = 3  # %K 기간
-    d_period = 3  # %D 기간
-    
-    stoch_rsi_k = stoch_rsi.rolling(window=k_period).mean()
-    stoch_rsi_d = stoch_rsi_k.rolling(window=d_period).mean()
+        # NaN 체크 후 %K와 %D 계산
+        if stoch_rsi.isnull().all():
+            print(f"{ticker}: Stochastic RSI 데이터가 없음")
+            return None  # 모든 값이 NaN인 경우 None 반환
 
-    # 결과를 DataFrame으로 묶어서 반환
-    result_df = pd.DataFrame({
-        'StochRSI': stoch_rsi,
-        '%K': stoch_rsi_k,
-        '%D': stoch_rsi_d
-    })
+        # %K와 %D 계산
+        k_period = 3  # %K 기간
+        d_period = 3  # %D 기간
+        
+        stoch_rsi_k = stoch_rsi.rolling(window=3).mean()
+        # stoch_rsi_d = stoch_rsi_k.rolling(window=d_period).mean()
 
-    return result_df.tail(6)
+        # 결과를 DataFrame으로 묶어서 반환
+        # result_df = pd.DataFrame({
+        #     'StochRSI': stoch_rsi,
+        #     '%K': stoch_rsi_k,
+        #     '%D': stoch_rsi_d
+        # })
+
+        if stoch_rsi_k is None or stoch_rsi_k.empty:  # %K가 비어 있는 경우
+            print(f"{ticker}: Stochastic RSI %K 데이터가 없음")
+            return None
+        
+        return stoch_rsi_k
+
+    except Exception as e:
+        print(f"Exception in processing {ticker}: {e}")
+        return None
 
 def get_atr(ticker, period):
     try:
@@ -229,47 +247,47 @@ def filtered_tickers(tickers, held_coins):
             
             if len(df_day) >= 3:
                 day_value_1 = df_day['value'].iloc[-1]      #일봉 9시 기준 당일 거래량
-                day_value_2 = df_day['value'].iloc[-2]      #일봉 9시 기준 전일 거래량 
+                # day_value_2 = df_day['value'].iloc[-2]      #일봉 9시 기준 전일 거래량 
             else:
                 continue
 
             cur_price = pyupbit.get_current_price(t)
                       
             day_open_price_1 = df_day['open'].iloc[-1]  #9시 기준 당일 시가
-            df_15_open = df_15['open'].iloc[-1]
+            # df_15_open = df_15['open'].iloc[-1]
             df_15_close1 = df_15['close'].iloc[-1]
             df_15_close2 = df_15['close'].iloc[-2]
             df_15_close3 = df_15['close'].iloc[-3]
-            df_15_low1 = df_15['low'].iloc[-1]
-            df_15_low2 = df_15['low'].iloc[-2]
-            df_15_low3 = df_15['low'].iloc[-3]
+            # df_15_low1 = df_15['low'].iloc[-1]
+            # df_15_low2 = df_15['low'].iloc[-2]
+            # df_15_low3 = df_15['low'].iloc[-3]
             atr = get_atr(t, 14)
            
             rsi = get_rsi(t, 14)
             last_rsi = rsi.iloc[-1]
             
-            stoch_rsi = stoch_rsi(t)   #스토캐스틱 RSI 계산
-            if stoch_rsi.empty or len(stoch_rsi) < 2:
-                raise ValueError("stoch_rsi : Stochastic RSI DataFrame is empty or has insufficient data.")
-
-            # if not stoch_rsi.empty and len(stoch_rsi) >= 2:
-            #     last_srsi = stoch_rsi['%K'].iloc[-1]
-            #     pre_srsi = stoch_rsi['%K'].iloc[-2]
-            # else:
-            #     raise ValueError("stoch_rsi : Stochastic RSI data is insufficient.")
-
-            # 볼린저 밴드값 도출
             bands_df = get_bollinger_bands(t)
             
-            if bands_df is not None:
-                Low_Bol1 = bands_df['Lower_Band'].iloc[-1]
-                Low_Bol2 = bands_df['Lower_Band'].iloc[-2]
-                Low_Bol3 = bands_df['Lower_Band'].iloc[-3]
-                up_Bol1 = bands_df['Upper_Band'].iloc[-1]
+            Low_Bol1 = bands_df['Lower_Band'].iloc[-1]
+            Low_Bol2 = bands_df['Lower_Band'].iloc[-2]
+            Low_Bol3 = bands_df['Lower_Band'].iloc[-3]
+            up_Bol1 = bands_df['Upper_Band'].iloc[-1]
 
-            # print(f"test1: {t} / 일봉 거래대금 {day_value_1:,.0f}")
+            # stoch_rsi_value = stoch_rsi(t)   #스토캐스틱 RSI 계산
+            # if stoch_rsi_value is None or stoch_rsi_value.empty:
+            #     print(f"{t}: Stochastic RSI 계산 실패")
+            # else:
+            #     try:
+            #         last_srsi = stoch_rsi_value.iloc[-1]
+            #         pre_srsi = stoch_rsi_value.iloc[-2]
+
+            #         if pre_srsi > 0:
+            #             print(f"{t}: Stochastic RSI working correctly. Last SRSI: {last_srsi}, Previous SRSI: {pre_srsi}")
+            #     except IndexError as e:
+            #         print(f"IndexError processing ticker {t}: {e}")
+
             if day_value_1 > 20_000_000_000 and cur_price < day_open_price_1:
-                # print(f"[cond 1-2]: {t} / 당일 거래량 > 10,000백만 / 상승률 5% 이내내")
+                            # print(f"[cond 1-2]: {t} / 당일 거래량 > 10,000백만 / 상승률 5% 이내")
 
                 if threshold_value < atr and up_Bol1 > Low_Bol1 * 1.03 :
                     # print(f"[cond 3]: {t} / [임계치] : {threshold_value:,.0f} < [변동폭] : {atr:,.0f}")
@@ -355,10 +373,12 @@ def trade_buy(ticker, k):
     attempt = 0  # 시도 횟수 초기화
     target_price = None  # target_price 초기화
 
-    stoch_rsi = stoch_rsi(ticker)   #스토캐스틱 RSI 계산
-    if not stoch_rsi.empty and len(stoch_rsi) >= 2:
-        last_srsi = stoch_rsi['%K'].iloc[-1]
-        pre_srsi = stoch_rsi['%K'].iloc[-2]
+    stoch_rsi_value = stoch_rsi(ticker)   #스토캐스틱 RSI 계산
+    if not stoch_rsi_value.empty and len(stoch_rsi_value) >= 2:
+        # last_srsi = stoch_rsi['%K'].iloc[-1]
+        # pre_srsi = stoch_rsi['%K'].iloc[-2]
+        last_srsi = stoch_rsi_value.iloc[-1]
+        pre_srsi = stoch_rsi_value.iloc[-2]
     else:
         raise ValueError("stoch_rsi : Stochastic RSI data is insufficient.")
     
@@ -469,7 +489,7 @@ def send_profit_report():
                 avg_buy_price = float(b['avg_buy_price'])
                 current_price = pyupbit.get_current_price(ticker)
                 s_rsi = stoch_rsi(ticker)
-                last_sRSI = s_rsi['%K'].iloc[-1]
+                last_sRSI = s_rsi.iloc[-1]
 
                 if buyed_amount > 0:
                     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
@@ -558,7 +578,8 @@ def additional_buy_logic():
                     ticker = f"KRW-{b['currency']}"  # 현재가 조회를 위한 티커 설정
                     current_price = pyupbit.get_current_price(ticker)  # 현재가 조회
                     s_rsi = stoch_rsi(ticker)
-                    last_sRSI = s_rsi['%K'].iloc[-1]
+                    # last_sRSI = s_rsi['%K'].iloc[-1]
+                    last_sRSI = s_rsi.iloc[-1]
                     # 볼린저 밴드값 도출
                     bands_df = get_bollinger_bands(ticker)
                     low_band = bands_df['Lower_Band'].iloc[-1]
@@ -579,6 +600,7 @@ def additional_buy_logic():
 
                     else:
                         print(f'조건 미충족: {ticker} / 현재가: {current_price:,.0f} / 수익률 : {profit_rate:,.2f}')
+                        time.sleep(1)
         time.sleep(180)
 
 # 매도 쓰레드 생성
@@ -589,6 +611,6 @@ selling_thread.start()
 buying_thread = threading.Thread(target=buying_logic)
 buying_thread.start()
 
-# # 추가 매수 쓰레드 생성
+# # # 추가 매수 쓰레드 생성
 additional_buy_thread = threading.Thread(target=additional_buy_logic)
 additional_buy_thread.start()
