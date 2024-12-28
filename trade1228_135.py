@@ -547,11 +547,6 @@ def buying_logic():
             time.sleep(5)
 
 def additional_buy_logic():
-    s_rsi = stoch_rsi(ticker)
-    last_sRSI = s_rsi['%K'].iloc[-1]
-    # 볼린저 밴드값 도출
-    bands_df = get_bollinger_bands(ticker)
-    low_band = bands_df['Lower_Band'].iloc[-1]
 
     while True:
         krw_balance = get_balance("KRW")  # 현재 KRW 잔고 조회
@@ -562,6 +557,11 @@ def additional_buy_logic():
                 if b['currency'] not in ["KRW", "QI", "ONX", "ETHF", "ETHW", "PURSE"]:  # 특정 통화 제외
                     ticker = f"KRW-{b['currency']}"  # 현재가 조회를 위한 티커 설정
                     current_price = pyupbit.get_current_price(ticker)  # 현재가 조회
+                    s_rsi = stoch_rsi(ticker)
+                    last_sRSI = s_rsi['%K'].iloc[-1]
+                    # 볼린저 밴드값 도출
+                    bands_df = get_bollinger_bands(ticker)
+                    low_band = bands_df['Lower_Band'].iloc[-1]
 
                     avg_buy_price = upbit.get_avg_buy_price(b['currency'])  # 평균 매수 가격 조회
                     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
