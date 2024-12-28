@@ -313,15 +313,17 @@ def filtered_tickers(tickers, held_coins):
                         # print(f"[cond 4]: [{t}] [RSI]:{last_ta_rsi:,.2f} < 60")
                            
                     # print(f"[test]: [{t}] 볼밴 하단가 : {Low_Bol1:,.2f} > 현재가 : {cur_price:,.2f}")    
-                        if Low_Bol3 >= df_15_low3 and Low_Bol2 >= df_15_low2 and Low_Bol1 > df_15_low2 and Low_Bol3 > Low_Bol2 > Low_Bol1 :
-                            if Low_Bol1 < cur_price < Low_Bol1*1.01 :
-                                print(f"[cond 5]: [{t}] 볼린저 밴드 하향 / 볼밴 연속 터치 / 볼밴 하단가 : {Low_Bol1:,.2f} < 현재가 : {cur_price:,.2f}")
-                                send_discord_message(f"[cond 5]: [{t}] 볼린저 밴드 하향 / 볼밴 연속 터치 / 볼밴 하단가 : {Low_Bol1:,.2f} < 현재가 : {cur_price:,.2f}")
+                        if Low_Bol3 >= df_15_low3 or Low_Bol2 >= df_15_low2 or Low_Bol1 > df_15_low2 :
+                            if Low_Bol3 > Low_Bol2 > Low_Bol1 :
+                                if Low_Bol1 < cur_price < Low_Bol1*1.01 :
+                                    print(f"[cond 5]: [{t}] 볼린저 밴드 하향 / 볼밴 연속 터치 / 볼밴 하단가 : {Low_Bol1:,.2f} < 현재가 : {cur_price:,.2f}")
+                                    send_discord_message(f"[cond 5]: [{t}] 볼린저 밴드 하향 / 볼밴 연속 터치 / 볼밴 하단가 : {Low_Bol1:,.2f} < 현재가 : {cur_price:,.2f}")
 
-                            if previous_srsi < last_rsi < 0.2:
-                                print(f"[cond 6]: [{t}]  [last s_RSI]:{last_srsi:,.2f} < 0.2")
-                                send_discord_message(f"[cond 6]: [{t}] [last s_RSI]:{last_srsi:,.2f} <0.2")   
-                                filtered_tickers.append(t)
+                                    send_discord_message(f"[test 6]: [{t}]  [last s_RSI]:{last_srsi:,.2f} < 0.25")
+                                    if previous_srsi <= last_rsi < 0.25:
+                                        print(f"[cond 6]: [{t}]  [last s_RSI]:{last_srsi:,.2f} < 0.25")
+                                        send_discord_message(f"[cond 6]: [{t}] [last s_RSI]:{last_srsi:,.2f} <0.2")   
+                                        filtered_tickers.append(t)
                 
         except Exception as e:
             send_discord_message(f"filtered_tickers/Error processing ticker {t}: {e}")
