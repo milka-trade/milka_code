@@ -131,7 +131,7 @@ def filtered_tickers(tickers):
 
                 # print(f'[test 2] {t} low_bol*1.03 : {Low_Bol[0]*1.03:,.2f} < up_bol : {up_Bol1:,.2f}')
                 if Low_Bol[0] * 1.02 < up_Bol1:
-                    print(f'[cond 2] {t} low_bol*1.03 : {Low_Bol[0]*1.02:,.2f} < up_bol : {up_Bol1:,.2f}')
+                    # print(f'[cond 2] {t} low_bol*1.02 : {Low_Bol[0]*1.02:,.2f} < up_bol : {up_Bol1:,.2f}')
 
                     if any(Low_Bol[i] >= df_10_close[i] for i in range(3)):
                         print(f'[cond 3] {t} 볼린저밴드 하단 터치')
