@@ -272,11 +272,6 @@ def filtered_tickers(tickers, held_coins):
                                 if Low_Bol1 < cur_price < Low_Bol1*1.01 :
                                     print(f"[cond 5]: [{t}] 볼린저 밴드 하향 / 볼밴 연속 터치 / 볼밴 하단가 : {Low_Bol1:,.2f} < 현재가 : {cur_price:,.2f}")
                                     send_discord_message(f"[cond 5]: [{t}] 볼린저 밴드 하향 / 볼밴 연속 터치 / 볼밴 하단가 : {Low_Bol1:,.2f} < 현재가 : {cur_price:,.2f}")
-
-                                    # send_discord_message(f"[test 6]: [{t}]  [last s_RSI]:{last_srsi:,.2f} < 0.25")
-                                    # if 0.1 < pre_srsi < last_rsi < 0.3:
-                                    #     print(f"[cond 6]: [{t}]  0.1 < [pre s_RSI];{pre_srsi:,.2f} <[last s_RSI]:{last_srsi:,.2f} < 0.3")
-                                    #     send_discord_message(f"[cond 6]: [{t}]  0.1 < [pre s_RSI];{pre_srsi:,.2f} <[last s_RSI]:{last_srsi:,.2f} < 0.3")
                                     filtered_tickers.append(t)
                 
         except Exception as e:
@@ -467,7 +462,7 @@ def send_profit_report():
 
                 if buyed_amount > 0:
                     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
-                    report_message += f"[{b['currency']}] 수익률:{profit_rate:.1f}% s_RSI_K:{sRSI_K:.2f} > s_RSI_D:{sRSI_D:,.2f}\n"
+                    report_message += f"[{b['currency']}] 수익률:{profit_rate:.1f}% s_RSI_D:{sRSI_D:,.2f} < s_RSI_K:{sRSI_K:.2f}\n"
 
             send_discord_message(report_message)  # 슬랙으로 보고서 전송
 
