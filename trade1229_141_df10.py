@@ -280,7 +280,6 @@ def trade_sell(ticker):
     stoch_rsi_value = stoch_rsi(ticker)   #스토캐스틱 RSI 계산
     if not stoch_rsi_value.empty and len(stoch_rsi_value) >= 2:
         srsi_k = stoch_rsi_value['%K'].iloc[-1]
-        srsi_k_2 = stoch_rsi_value['%K'].iloc[-2]
         # srsi_d = stoch_rsi_value['%D'].iloc[-1]
                
     else:
@@ -312,10 +311,10 @@ def trade_sell(ticker):
                 print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 수익률: {profit_rate:.2f}%") 
                     
                 # if profit_rate >= 2 and current_price > last_ema20*1.005:
-                if profit_rate >= 2 and srsi_k_2 >= srsi_k:
+                if profit_rate >= 2 and srsi_k >= 0.8:
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
-                    print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / srsi2:{srsi_k_2:,.2f} >= srsi:{srsi_k:,.2f} / 시도 {attempts + 1} / {max_attempts}")
-                    send_discord_message(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / srsi2:{srsi_k_2:,.2f} >= srsi:{srsi_k:,.2f} / 시도 {attempts + 1} / {max_attempts}")
+                    print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / srsi:{srsi_k:,.2f}>=0.8 / 시도 {attempts + 1} / {max_attempts}")
+                    send_discord_message(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / srsi:{srsi_k:,.2f}>=0.8 / 시도 {attempts + 1} / {max_attempts}")
                     # print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
                     # send_discord_message(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
                     return sell_order
@@ -325,10 +324,10 @@ def trade_sell(ticker):
                 attempts += 1  # 조회 횟수 증가
                 
             # if profit_rate >= 0.6 and current_price > last_ema20*0.99 and srsi_k_2 >= srsi_k :
-            if profit_rate >= 0.6 and srsi_k_2 >= srsi_k :
+            if profit_rate >= 0.6 and srsi_k >= 0.75 :
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
-                send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} / srsi2:{srsi_k_2:,.2f} >= srsi:{srsi_k:,.2f}")
-                print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} / srsi2:{srsi_k_2:,.2f} > srsi:{srsi_k:,.2f}")
+                send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} / srsi:{srsi_k:,.2f}>=0.75")
+                print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} / srsi:{srsi_k:,.2f}>=0.75")
                 # send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} / ema20 99%:{last_ema20*0.99:,.2f} / srsi2:{srsi_k_2:,.2f} >= srsi:{srsi_k:,.2f}")
                 # print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} / ema20 99%:{last_ema20*0.99:,.2f} / srsi2:{srsi_k_2:,.2f} > srsi:{srsi_k:,.2f}")
                 return sell_order   
