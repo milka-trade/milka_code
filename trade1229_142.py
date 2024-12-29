@@ -128,9 +128,9 @@ def filtered_tickers(tickers):
             Low_Bol = bands_df['Lower_Band'].iloc[-3:].tolist()  # 볼린저 밴드 하단가 리스트
             up_Bol1 = bands_df['Upper_Band'].iloc[-1]
 
-            if cur_price < day_open_price_1*1.03 and day_value > 5_000_000_000:
+            if cur_price < day_open_price_1*1.03 and day_value > 10_000_000_000:
 
-                if Low_Bol[0] * 1.025 < up_Bol1:
+                if Low_Bol[0] * 1.03 < up_Bol1:
                     # print(f'[cond 2] {t} low_bol*1.025 : {Low_Bol[0]*1.02:,.2f} < up_bol : {up_Bol1:,.2f}')
 
                     if any(Low_Bol[i] >= df_15_close[i] for i in range(3)):
@@ -246,7 +246,7 @@ def trade_buy(ticker, k):
                 print(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / 목표가:{target_price:,.2f} -(시도 {attempt + 1}/{max_retries})")
                 send_discord_message(f"매수시도: [{ticker}] 현재가:{current_price:,.2f} < 목표가:{target_price:,.2f} / sRSI_D:{srsi_d:,.2f} < sRSI_K:{srsi_k:,.2f} < 0.3")
                 
-                if current_price <= target_price and 0 < srsi_d < srsi_k < 0.3:
+                if current_price <= target_price and 0.1 < srsi_d < srsi_k < 0.3:
                     buy_attempts = 3
                     for i in range(buy_attempts):
                         try:
