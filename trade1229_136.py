@@ -56,8 +56,8 @@ def get_balance(ticker):
     return 0
 
 def get_ema(ticker, window):
-    df = load_ohlcv(ticker)
-    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
+    # df = load_ohlcv(ticker)
+    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
 
     if df is not None and not df.empty:
         # return df['close'].ewm(span=window, adjust=False).mean()  # EMA 계산 후 마지막 값 반환
@@ -70,8 +70,8 @@ def get_ema(ticker, window):
 def get_best_k(ticker):
     bestK = 0.1  # 초기 K 값
     interest = 0  # 초기 수익률
-    df = load_ohlcv(ticker)  # 데이터 로드
-    # df = pyupbit.get_ohlcv(ticker, interval="minute15", count=10)
+    # df = load_ohlcv(ticker)  # 데이터 로드
+    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=20)
 
     if df is None or df.empty:
         return bestK  # 데이터가 없으면 초기 K 반환
