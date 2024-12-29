@@ -363,7 +363,7 @@ def trade_buy(ticker, k):
                 # send_discord_message(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / 목표가:{target_price:,.2f} -(시도 {attempt + 1}/{max_retries})")
 
                 send_discord_message(f"매수시도: [{ticker}] 현재가:{current_price:,.2f} < 목표가:{target_price:,.2f} / sRSI_D:{srsi_d:,.2f} < sRSI_K:{srsi_k:,.2f} < 0.3")
-                if current_price <= target_price and 0.1 < srsi_d < srsi_k < 0.3:
+                if current_price <= target_price and 0 < srsi_d < srsi_k < 0.3:
                     buy_attempts = 3
                     for i in range(buy_attempts):
                         try:
@@ -562,7 +562,7 @@ def additional_buy_logic():
                     avg_buy_price = upbit.get_avg_buy_price(b['currency'])  # 평균 매수 가격 조회
                     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
 
-                    if profit_rate < -4 and current_price < low_band * 0.99 and 0.1 < sRSI_D < sRSI_K < 0.3 :      # 조건 체크: 수익률이 -4% 이하 현재가가 볼린저 밴드 하단 미만, sRSI 0.2미만
+                    if profit_rate < -4 and current_price < low_band * 0.99 and 0 < sRSI_D < sRSI_K < 0.3 :      # 조건 체크: 수익률이 -4% 이하 현재가가 볼린저 밴드 하단 미만, sRSI 0.2미만
                         
                         krw = get_balance("KRW")
                         # print(f'매수 조건 만족: {ticker} / 현재가: {current_price:,.0f} / 볼린저 밴드 하단: {low_band}')
