@@ -206,7 +206,6 @@ def filtered_tickers(tickers):
     for t in tickers:
         try:
             df_day = pyupbit.get_ohlcv(t, interval="day", count=1)
-            print(df_day)
             if df_day is None or df_day.empty or 'high' not in df_day or 'low' not in df_day or 'open' not in df_day:
                 continue
             
