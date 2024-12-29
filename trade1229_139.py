@@ -223,20 +223,29 @@ def filtered_tickers(tickers):
             rsi = get_rsi(t, 14).iloc[-1]  # 최근 RSI 값
             bands_df = get_bollinger_bands(t)
             Low_Bol = bands_df['Lower_Band'].iloc[-3:].tolist()  # 볼린저 밴드 하단가 리스트
+            # print(f'{t} {Low_Bol}\n')
             up_Bol1 = bands_df['Upper_Band'].iloc[-1]
 
             # 조건 체크
-            if day_value_1 > 10_000_000_000 and cur_price < day_open_price_1:
-                # print(f'[cond 1] {t} 거래량 20_000백만 이상:{day_value_1:,.2f} / 현재가:{cur_price:,.2f} < 시가:{day_open_price_1:,.2f}')
+            # if threshold_value < atr :
+                # print(f'[cond 1] {t} 임계치:{threshold_value:,.2f} < atr:{atr:,.2f}')
                 
-                if threshold_value < atr and Low_Bol[0] * 1.03 < up_Bol1 and rsi < 60 :
-                    print(f'[cond 2] {t} 임계치:{threshold_value:,.2f} < atr:{atr:,.2f} / low_bol*1.03 : {Low_Bol[0]*1.03:,.2f} < up_bol : {up_Bol1:,.2f} / rsi:{rsi:,.2f} < 60')
+                # if day_value_1 > 10_000_000_000 and cur_price < day_open_price_1*1.03:
+            if cur_price < day_open_price_1*1.03:
+                    # print(f'[cond 2] {t} 거래량 20_000백만 이상:{day_value_1:,.2f} / 현재가:{cur_price:,.2f} < 시가:{day_open_price_1:,.2f}')
+                    # print(f'[cond 2] {t} 현재가:{cur_price:,.2f} < 시가:{day_open_price_1:,.2f}')
+                                
+                    if any(Low_Bol[i] >= df_15_close[i] for i in range(3)) and Low_Bol[0] * 1.03 < up_Bol1:
+                        print(f'[cond 3:] {t} 볼린저밴드 하단 터치 / low_bol*1.03 : {Low_Bol[0]*1.03:,.2f} < up_bol : {up_Bol1:,.2f}')
                 
-                    if Low_Bol[0] > Low_Bol[1] > Low_Bol[2] and all(Low_Bol[i] >= df_15_close[i] for i in range(3)) :  
+                        # if rsi < 60 and Low_Bol[0] > Low_Bol[1] > Low_Bol[2] and any(Low_Bol[i] >= df_15_close[i] for i in range(3)) :
+                        # if Low_Bol[0] > Low_Bol[1] > Low_Bol[2] and any(Low_Bol[i] >= df_15_close[i] for i in range(3)) :
+                            # print(f'[cond 4] {t} rsi:{rsi:,.2f} < 60 / 볼린저밴드 하단 터치')
+                            
                         if Low_Bol[0] < cur_price < Low_Bol[0] * 1.01:
-                            print(f'[cond 3] {t} 볼린저밴드 하단 터치 / 현재가 볼린저밴드 1% 이내 {Low_Bol[0]:,.2f} < 현재가 : {cur_price:,.2f}')
-                            send_discord_message(f"[cond 4]: [{t}] 볼린저밴드 하단 터치 / 현재가 하단 1% 이내 : {Low_Bol[0]:,.2f} < 현재가 : {cur_price:,.2f} < 밴드1% : {Low_Bol[0]*1.01:,.2f}")
-                            filtered_tickers.append(t)
+                                print(f'[cond 4] {t} 현재가 볼린저밴드 1% 이내 {Low_Bol[0]:,.2f} < 현재가 : {cur_price:,.2f}')
+                                send_discord_message(f"[cond 5] [{t}] 볼린저밴드 하단 터치 / 현재가 하단 1% 이내 : {Low_Bol[0]:,.2f} < 현재가 : {cur_price:,.2f} < 밴드1% : {Low_Bol[0]*1.01:,.2f}")
+                                filtered_tickers.append(t)
 
         except Exception as e:
             send_discord_message(f"filtered_tickers/Error processing ticker {t}: {e}")
@@ -310,7 +319,7 @@ def trade_buy(ticker, k):
     else:
         raise ValueError("stoch_rsi : Stochastic RSI data is insufficient.")
     
-    if krw >= 3_000_000 :  # 매수 조건 확인
+    if krw >= 500_000 :  # 매수 조건 확인
         target_price = get_target_price(ticker, k)
         
         while attempt < max_retries:
