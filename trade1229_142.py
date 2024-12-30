@@ -133,12 +133,12 @@ def filtered_tickers(tickers):
                 if Low_Bol[0] * 1.03 < up_Bol1:
                     # print(f'[cond 2] {t} low_bol*1.025 : {Low_Bol[0]*1.02:,.2f} < up_bol : {up_Bol1:,.2f}')
 
-                    if any(Low_Bol[i] >= df_15_close[i] for i in range(3)):
-                        print(f'[cond 3] {t} 볼린저밴드 하단 터치')
+                    if any(Low_Bol[i] >= df_15_close[i] for i in range(3)) and all(Low_Bol[i + 1] < Low_Bol[i] for i in range(2)):
+                        print(f'[cond 3] {t} 볼린저 하단 터치 볼린저-3:{Low_Bol[2]} > 종가-3:{df_15_close[2]} / 볼린저-2:{Low_Bol[1]} > 종가-2:{df_15_close[1]} / 볼린저-1:{Low_Bol[0]} > 종가-1:{df_15_close[0]}')
                 
-                        if cur_price < Low_Bol[0] * 1.005:
-                            print(f'[cond 4] {t} < 현재가 : {cur_price:,.2f} < Low_Bol*0.5% : {Low_Bol[0]*1.005:,.2f}')
-                            send_discord_message(f'[cond 4] {t} < 현재가 : {cur_price:,.2f} < Low_Bol*0.5% : {Low_Bol[0]*1.005:,.2f}')
+                        if Low_Bol[0] < cur_price < Low_Bol[0] * 1.005:
+                            print(f'[cond 4] {t} < Low_Bol : {Low_Bol[0]:,.2f} < 현재가 : {cur_price:,.2f} < Low_Bol*0.5% : {Low_Bol[0]*1.005:,.2f}')
+                            send_discord_message(f'[cond 4] {t} < Low_Bol : {Low_Bol[0]:,.2f} < 현재가 : {cur_price:,.2f} < Low_Bol*0.5% : {Low_Bol[0]*1.005:,.2f}')
                             filtered_tickers.append(t)
 
         except Exception as e:
@@ -246,7 +246,7 @@ def trade_buy(ticker, k):
                 print(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / 목표가:{target_price:,.2f} -(시도 {attempt + 1}/{max_retries})")
                 send_discord_message(f"매수시도: [{ticker}] 현재가:{current_price:,.2f} < 목표가:{target_price:,.2f} / sRSI_D:{srsi_d:,.2f} < sRSI_K:{srsi_k:,.2f} < 0.3")
                 
-                if current_price <= target_price and 0.1 < srsi_d < srsi_k < 0.3:
+                if current_price <= target_price and 0.2 < srsi_d < srsi_k < 0.35:
                     buy_attempts = 3
                     for i in range(buy_attempts):
                         try:
