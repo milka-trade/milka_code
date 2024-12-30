@@ -134,7 +134,7 @@ def filtered_tickers(tickers):
                     # print(f'[cond 2] {t} low_bol*1.025 : {Low_Bol[0]*1.02:,.2f} < up_bol : {up_Bol1:,.2f}')
 
                     if any(Low_Bol[i] >= df_15_close[i] for i in range(3)) and all(Low_Bol[i + 1] < Low_Bol[i] for i in range(2)):
-                        print(f'[cond 3] {t} 볼린저 하단 터치 볼린저-3:{Low_Bol[2]:,.2f} > 종가-3:{df_15_close[2]:,.2f} / 볼린저-2:{Low_Bol[1]:,.2f} > 종가-2:{df_15_close[1]:,.2f} / 볼린저-1:{Low_Bol[0]:,.2f} > 종가-1:{df_15_close[0]:,.2f}')
+                        print(f'[cond 3] {t} 볼린저 하단 터치 볼린저-3: {Low_Bol[2]:,.2f} > 종가-3: {df_15_close[2]:,.2f} / 볼린저-2: {Low_Bol[1]:,.2f} > 종가-2: {df_15_close[1]:,.2f} / 볼린저-1: {Low_Bol[0]:,.2f} > 종가-1: {df_15_close[0]:,.2f}')
                 
                         if Low_Bol[0] < cur_price < Low_Bol[0] * 1.005:
                             print(f'[cond 4] {t} < Low_Bol : {Low_Bol[0]:,.2f} < 현재가 : {cur_price:,.2f} < Low_Bol*0.5% : {Low_Bol[0]*1.005:,.2f}')
