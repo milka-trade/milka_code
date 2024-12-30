@@ -108,6 +108,13 @@ def filtered_tickers(tickers):
     """특정 조건에 맞는 티커 필터링"""
     filtered_tickers = []
 
+    # 'KRW-SOL'의 거래량을 가져옵니다.
+    df_sol = pyupbit.get_ohlcv('KRW-SOL', interval="day", count=1)
+    if df_sol is None or df_sol.empty or 'value' not in df_sol:
+        raise ValueError("KRW-SOL의 거래량을 가져오는 데 실패했습니다.")
+    
+    krw_sol_day_value = df_sol['value'].tail(1).iloc[0]  # KRW-SOL의 당일 거래량
+    
     for t in tickers:
         try:
             df_day = pyupbit.get_ohlcv(t, interval="day", count=1)
@@ -123,23 +130,22 @@ def filtered_tickers(tickers):
             
             df_15_close = df_15['close'].iloc[-3:].tolist()  # 15분 봉 종가 리스트
             cur_price = pyupbit.get_current_price(t)
+            df_15_open = df_15['open'].tail(1).iloc[-1]
 
             bands_df = get_bollinger_bands(t)
             Low_Bol = bands_df['Lower_Band'].iloc[-3:].tolist()  # 볼린저 밴드 하단가 리스트
             up_Bol1 = bands_df['Upper_Band'].iloc[-1]
 
-            if cur_price < day_open_price_1*1.03 and day_value > 10_000_000_000:
+            if cur_price < day_open_price_1*1.03 and Low_Bol[0] * 1.03 < up_Bol1 and day_value > krw_sol_day_value :
+                print(f'[cond 1] {t} low_bol*1.03 : {Low_Bol[0]*1.03:,.2f} < up_bol : {up_Bol1:,.2f} / 거래량: {day_value:,.0f} > SOL: {krw_sol_day_value:,.0f}')
 
-                if Low_Bol[0] * 1.03 < up_Bol1:
-                    # print(f'[cond 2] {t} low_bol*1.025 : {Low_Bol[0]*1.02:,.2f} < up_bol : {up_Bol1:,.2f}')
-
-                    if any(Low_Bol[i] >= df_15_close[i] for i in range(3)) and all(Low_Bol[i + 1] < Low_Bol[i] for i in range(2)):
-                        print(f'[cond 3] {t} 볼린저 하단 터치 볼린저-3: {Low_Bol[2]:,.2f} > 종가-3: {df_15_close[2]:,.2f} / 볼린저-2: {Low_Bol[1]:,.2f} > 종가-2: {df_15_close[1]:,.2f} / 볼린저-1: {Low_Bol[0]:,.2f} > 종가-1: {df_15_close[0]:,.2f}')
-                
-                        if Low_Bol[0] < cur_price < Low_Bol[0] * 1.005:
-                            print(f'[cond 4] {t} < Low_Bol : {Low_Bol[0]:,.2f} < 현재가 : {cur_price:,.2f} < Low_Bol*0.5% : {Low_Bol[0]*1.005:,.2f}')
-                            send_discord_message(f'[cond 4] {t} < Low_Bol : {Low_Bol[0]:,.2f} < 현재가 : {cur_price:,.2f} < Low_Bol*0.5% : {Low_Bol[0]*1.005:,.2f}')
-                            filtered_tickers.append(t)
+                if any(Low_Bol[i] >= df_15_close[i] for i in range(3)) and all(Low_Bol[i + 1] < Low_Bol[i] for i in range(2)):
+                    print(f'[cond 3] {t} 볼린저 하단 터치 볼린저-3: {Low_Bol[2]:,.2f} > 종가-3: {df_15_close[2]:,.2f} / 볼린저-2: {Low_Bol[1]:,.2f} > 종가-2: {df_15_close[1]:,.2f} / 볼린저-1: {Low_Bol[0]:,.2f} > 종가-1: {df_15_close[0]:,.2f}')
+            
+                    if df_15_open < cur_price < Low_Bol[0] * 1.01:
+                        print(f'[cond 4] {t} < 시가 : {df_15_open:,.2f} < 현재가 : {cur_price:,.2f} < Low_Bol*0.5% : {Low_Bol[0]*1.005:,.2f}')
+                        send_discord_message(f'[cond 4] {t} < 시가 : {df_15_open:,.2f} < 현재가 : {cur_price:,.2f} < Low_Bol*0.5% : {Low_Bol[0]*1.005:,.2f}')
+                        filtered_tickers.append(t)
 
         except Exception as e:
             send_discord_message(f"filtered_tickers/Error processing ticker {t}: {e}")
