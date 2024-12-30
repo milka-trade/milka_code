@@ -230,7 +230,7 @@ def get_target_price(ticker, k):  #변동성 돌파 전략 구현
 def trade_buy(ticker, k):
     
     krw = get_balance("KRW")
-    max_retries = 3  
+    max_retries = 10  
     buy_size = min(1_000_000, krw*0.9995)
     
     attempt = 0  # 시도 횟수 초기화
@@ -252,7 +252,7 @@ def trade_buy(ticker, k):
                 print(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / < 목표가:{target_price:,.2f} / 0.2 < sRSI_D:{srsi_d:,.2f} < sRSI_K:{srsi_k:,.2f} < 0.35")
                 send_discord_message(f"매수시도: [{ticker}] 현재가:{current_price:,.2f} < 목표가:{target_price:,.2f} / 0.2 < sRSI_D:{srsi_d:,.2f} < sRSI_K:{srsi_k:,.2f} < 0.35")
                 
-                if current_price <= target_price and 0.2 < srsi_d < srsi_k < 0.35:
+                if current_price <= target_price and 0.1 < srsi_d < srsi_k < 0.4:
                     buy_attempts = 3
                     for i in range(buy_attempts):
                         try:
