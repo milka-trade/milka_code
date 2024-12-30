@@ -249,8 +249,8 @@ def trade_buy(ticker, k):
         
         while attempt < max_retries:
                 current_price = pyupbit.get_current_price(ticker)
-                print(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / 목표가:{target_price:,.2f} -(시도 {attempt + 1}/{max_retries})")
-                send_discord_message(f"매수시도: [{ticker}] 현재가:{current_price:,.2f} < 목표가:{target_price:,.2f} / sRSI_D:{srsi_d:,.2f} < sRSI_K:{srsi_k:,.2f} < 0.3")
+                print(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / < 목표가:{target_price:,.2f} / 0.2 < sRSI_D:{srsi_d:,.2f} < sRSI_K:{srsi_k:,.2f} < 0.35")
+                send_discord_message(f"매수시도: [{ticker}] 현재가:{current_price:,.2f} < 목표가:{target_price:,.2f} / 0.2 < sRSI_D:{srsi_d:,.2f} < sRSI_K:{srsi_k:,.2f} < 0.35")
                 
                 if current_price <= target_price and 0.2 < srsi_d < srsi_k < 0.35:
                     buy_attempts = 3
@@ -258,7 +258,7 @@ def trade_buy(ticker, k):
                         try:
                             buy_order = upbit.buy_market_order(ticker, buy_size)
                             print(f"매수 성공: [{ticker}]")
-                            send_discord_message(f"매수 성공: [{ticker}] 현재가:{current_price:,.2f} < 목표가:{target_price:,.2f} / sRSI_D:{srsi_d:,.2f} < sRSI_K:{srsi_k:,.2f} < 0.3")
+                            send_discord_message(f"매수 성공: [{ticker}] 현재가:{current_price:,.2f} < 목표가:{target_price:,.2f} / sRSI_D:{srsi_d:,.2f} < sRSI_K:{srsi_k:,.2f}")
                             return buy_order
 
                         except Exception as e:
