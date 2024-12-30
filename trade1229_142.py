@@ -136,8 +136,8 @@ def filtered_tickers(tickers):
             Low_Bol = bands_df['Lower_Band'].iloc[-3:].tolist()  # 볼린저 밴드 하단가 리스트
             up_Bol1 = bands_df['Upper_Band'].iloc[-1]
 
-            if cur_price < day_open_price_1*1.03 and Low_Bol[0] * 1.03 < up_Bol1 and day_value > krw_sol_day_value :
-                print(f'[cond 1] {t} low_bol*1.03 : {Low_Bol[0]*1.03:,.2f} < up_bol : {up_Bol1:,.2f} / 거래량: {day_value:,.0f} > SOL: {krw_sol_day_value:,.0f}')
+            if cur_price < day_open_price_1*1.03 and Low_Bol[0] * 1.03 < up_Bol1 and day_value >= krw_sol_day_value :
+                # print(f'[cond 1] {t} low_bol*1.03 : {Low_Bol[0]*1.03:,.2f} < up_bol : {up_Bol1:,.2f} / 거래량: {day_value:,.0f} > SOL: {krw_sol_day_value:,.0f}')
 
                 if any(Low_Bol[i] >= df_15_close[i] for i in range(3)) and all(Low_Bol[i + 1] < Low_Bol[i] for i in range(2)):
                     print(f'[cond 3] {t} 볼린저 하단 터치 볼린저-3: {Low_Bol[2]:,.2f} > 종가-3: {df_15_close[2]:,.2f} / 볼린저-2: {Low_Bol[1]:,.2f} > 종가-2: {df_15_close[1]:,.2f} / 볼린저-1: {Low_Bol[0]:,.2f} > 종가-1: {df_15_close[0]:,.2f}')
