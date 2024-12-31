@@ -249,8 +249,8 @@ def trade_buy(ticker, k):
         
         while attempt < max_retries:
                 current_price = pyupbit.get_current_price(ticker)
-                print(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / < 목표가:{target_price:,.2f} / 0.2 < sRSI_D:{srsi_d:,.2f} < sRSI_K:{srsi_k:,.2f} < 0.35")
-                send_discord_message(f"매수시도: [{ticker}] 현재가:{current_price:,.2f} < 목표가:{target_price:,.2f} / 0.2 < sRSI_D:{srsi_d:,.2f} < sRSI_K:{srsi_k:,.2f} < 0.35")
+                print(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / < 목표가:{target_price:,.2f} / 0.2 < sRSI_D:{srsi_d:,.2f} < sRSI_K:{srsi_k:,.2f} < 0.35/ 시도:{attempt} - 최대:{max_retries}")
+                # send_discord_message(f"매수시도: [{ticker}] 현재가:{current_price:,.2f} < 목표가:{target_price:,.2f} / 0.2 < sRSI_D:{srsi_d:,.2f} < sRSI_K:{srsi_k:,.2f} < 0.35 / 시도:{attempt} - 최대:{max_retries}")
                 
                 if current_price <= target_price and 0.1 < srsi_d < srsi_k < 0.4:
                     buy_attempts = 3
@@ -258,7 +258,7 @@ def trade_buy(ticker, k):
                         try:
                             buy_order = upbit.buy_market_order(ticker, buy_size)
                             print(f"매수 성공: [{ticker}]")
-                            send_discord_message(f"매수 성공: [{ticker}] 현재가:{current_price:,.2f} < 목표가:{target_price:,.2f} / sRSI_D:{srsi_d:,.2f} < sRSI_K:{srsi_k:,.2f}")
+                            send_discord_message(f"매수 성공: [{ticker}] 현재가:{current_price:,.2f} < 목표가:{target_price:,.2f} / sRSI_D:{srsi_d:,.2f} < sRSI_K:{srsi_k:,.2f} / / 시도횟수:{attempt}")
                             return buy_order
 
                         except Exception as e:
@@ -267,7 +267,6 @@ def trade_buy(ticker, k):
                             time.sleep(5 * (i + 1))  # Exponential backoff
 
                         return "Buy order failed", None
-
                 else:
                     attempt += 1  # 시도 횟수 증가
                     time.sleep(60)
@@ -318,17 +317,17 @@ def trade_sell(ticker):
                 profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
                 print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 수익률: {profit_rate:.2f}%") 
                     
-                # if profit_rate >= 2 and current_price > last_ema20*1.005:
-                if profit_rate >= 2 and srsi_k >= 0.8:
+                if profit_rate >= 2 and current_price > last_ema20*1.005:
+                # if profit_rate >= 2 and srsi_k >= 0.8:
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
-                    print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / srsi:{srsi_k:,.2f}>=0.8 / 시도 {attempts + 1} / {max_attempts}")
-                    send_discord_message(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / srsi:{srsi_k:,.2f}>=0.8 / 시도 {attempts + 1} / {max_attempts}")
-                    # print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
-                    # send_discord_message(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
+                    # print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / srsi:{srsi_k:,.2f}>=0.8 / 시도 {attempts + 1} / {max_attempts}")
+                    # send_discord_message(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / srsi:{srsi_k:,.2f}>=0.8 / 시도 {attempts + 1} / {max_attempts}")
+                    print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
+                    send_discord_message(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
                     return sell_order
 
                 else:
-                    time.sleep(0.5)  # 짧은 대기                                                                                                                                                    
+                    time.sleep(1)  # 짧은 대기                                                                                                                                                    
                 attempts += 1  # 조회 횟수 증가
                 
             if profit_rate >= 0.6 and pre_srsi_k >= srsi_k :
@@ -427,14 +426,14 @@ def buying_logic():
                         send_discord_message( f"[{buy_time}] 선정코인: [{best_ticker}] / k값: {best_k:,.2f} / 수익률: {interest:,.2f}")
                         result = trade_buy(best_ticker, best_k)
                         if result:  # 매수 성공 여부 확인
-                            time.sleep(30)
+                            time.sleep(120)
                         else:
                             return None
                     else:
-                        time.sleep(30)
+                        time.sleep(120)
 
                 else:
-                    time.sleep(30)
+                    time.sleep(120)
 
         except Exception as e:
             print(f"buying_logic / 에러 발생: {e}")
