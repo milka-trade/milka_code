@@ -301,7 +301,7 @@ def trade_sell(ticker):
     sell_start = selltime.replace(hour=8, minute=50 , second=00, microsecond=0)
     sell_end = selltime.replace(hour=8, minute=59, second=50, microsecond=0)
 
-    max_attempts = 20  # 최대 조회 횟수
+    max_attempts = 10  # 최대 조회 횟수
     attempts = 0  # 현재 조회 횟수
     
     if sell_start <= selltime <= sell_end:      # 매도 제한시간이면
