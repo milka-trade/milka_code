@@ -41,7 +41,7 @@ def get_balance(ticker):
 
 def get_atr(ticker, period):
     try:
-        df_atr_day = pyupbit.get_ohlcv(ticker, interval="minute15", count=200)
+        df_atr_day = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
         time.sleep(0.5)  # API 호출 제한을 위한 대기
     except Exception as e:
         print(f"API call failed: {e}")
@@ -93,7 +93,7 @@ def get_ema(ticker, window):
         return 0  # 데이터가 없으면 0 반환
 
 def stoch_rsi(ticker):
-    df = pyupbit.get_ohlcv(ticker, interval="minute5", count=200)
+    df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200)
     time.sleep(0.5)
      
     rsi = ta.momentum.RSIIndicator(df['close'], window=14).rsi()
@@ -184,13 +184,14 @@ def filtered_tickers(tickers):
             # if cur_price < day_open_price_1*1.03 :
                 # print(f'[cond 1] {t} 현가 : {cur_price:,.2f} < 시가*3% : {day_open_price_1*1.03:,.2f}')
                 
-            if threshold_value < atr:
-                    print(f'[cond 1-2] {t} 임계치 : {threshold_value:,.2f} < atr : {atr:,.2f}')
+            # print(f'[test 1-2] {t} 임계치 : {threshold_value:,.2f} < atr : {atr:,.2f}')
+            # if threshold_value < atr:
+            #         print(f'[cond 1-2] {t} 임계치 : {threshold_value:,.2f} < atr : {atr:,.2f}')
                     
                     # if Low_Bol[0] * 1.04 < up_Bol1 :
                     #     print(f'[cond 2] {t} low_bol*4% : {Low_Bol[0]*1.04:,.2f} < up_bol : {up_Bol1:,.2f}')
 
-                    if any(Low_Bol[i] >= df_15_close[i] for i in range(5)) and all(Low_Bol[i + 1] < Low_Bol[i] for i in range(3)):
+            if any(Low_Bol[i] >= df_15_close[i] for i in range(5)) and all(Low_Bol[i + 1] < Low_Bol[i] for i in range(3)):
                             # print(f'[cond 3] {t} 볼린저 하단 터치 볼린저-3: {Low_Bol[2]:,.2f} > 종가-3: {df_15_close[2]:,.2f} / 볼린저-2: {Low_Bol[1]:,.2f} > 종가-2: {df_15_close[1]:,.2f} / 볼린저-1: {Low_Bol[0]:,.2f} > 종가-1: {df_15_close[0]:,.2f}')
                     
                             if df_15_open < cur_price < Low_Bol[0] * 1.01:
