@@ -152,11 +152,11 @@ def filtered_tickers(tickers, held_coins):
     threshold_value = get_dynamic_threshold(tickers)
 
     # 'KRW-SOL'의 거래량을 가져옵니다.
-    # df_sol = pyupbit.get_ohlcv('KRW-SOL', interval="day", count=1)
-    # if df_sol is None or df_sol.empty or 'value' not in df_sol:
-    #     raise ValueError("KRW-SOL의 거래량을 가져오는 데 실패했습니다.")
+    df_sol = pyupbit.get_ohlcv('KRW-SOL', interval="day", count=1)
+    if df_sol is None or df_sol.empty or 'value' not in df_sol:
+        raise ValueError("KRW-SOL의 거래량을 가져오는 데 실패했습니다.")
     
-    # krw_sol_day_value = df_sol['value'].tail(1).iloc[0]  # KRW-SOL의 당일 거래량
+    krw_sol_day_value = df_sol['value'].tail(1).iloc[0]  # KRW-SOL의 당일 거래량
     
     for t in tickers:
         currency = t.split("-")[1]      # 티커에서 통화 정보 추출
@@ -186,22 +186,22 @@ def filtered_tickers(tickers, held_coins):
 
             atr = get_atr(t, 14)
 
-            if cur_price < day_open_price_1*1.05 :
-                print(f'[cond 1] {t} 현가 : {cur_price:,.2f} < 시가*5% : {day_open_price_1*1.05:,.2f}')
+            if cur_price < day_open_price_1*1.05 and day_value > krw_sol_day_value :
+                # print(f'[cond 1] {t} 현가 : {cur_price:,.2f} < 시가*5% : {day_open_price_1*1.05:,.2f}')
                 
-                # if threshold_value < atr:
-                #         print(f'[cond 1-2] {t} 임계치 : {threshold_value:,.2f} < atr : {atr:,.2f}')
+                if threshold_value < atr:
+                    # print(f'[cond 1-2] {t} 임계치 : {threshold_value:,.2f} < atr : {atr:,.2f}')
                     
-                if Low_Bol[2] * 1.03 < up_Bol1 :
-                    print(f'[cond 2] {t} low_bol*3% : {Low_Bol[2]*1.03:,.2f} < up_bol : {up_Bol1:,.2f}')
+                    if Low_Bol[2] * 1.03 < up_Bol1 :
+                        print(f'[cond 2] {t} low_bol*3% : {Low_Bol[2]*1.03:,.2f} < up_bol : {up_Bol1:,.2f}')
 
-                    if any(Low_Bol[i] >= df_15_close[i] for i in range(3)) and all(Low_Bol[i] > Low_Bol[i + 1] for i in range(2)):
-                                # print(f'[cond 3] {t} 볼린저 하단 터치 볼린저-3: {Low_Bol[2]:,.2f} > 종가-3: {df_15_close[2]:,.2f} / 볼린저-2: {Low_Bol[1]:,.2f} > 종가-2: {df_15_close[1]:,.2f} / 볼린저-1: {Low_Bol[0]:,.2f} > 종가-1: {df_15_close[0]:,.2f}')
-                    
-                            if df_15_open < df_15_close and cur_price < Low_Bol[2] * 1.01:
-                                print(f'[cond 4] {t} < 시가: {df_15_open:,.2f} < 종가: {df_15_close} / 현재가: {cur_price:,.2f} < Low_Bol*1% : {Low_Bol[2]*1.01:,.2f}')
-                                send_discord_message(f'[cond 4] {t} < 시가: {df_15_open:,.2f} < 종가: {df_15_close} / 현재가: {cur_price:,.2f} < Low_Bol*1% : {Low_Bol[2]*1.01:,.2f}')
-                                filtered_tickers.append(t)
+                        if any(Low_Bol[i] >= df_15_close[i] for i in range(3)) and all(Low_Bol[i] > Low_Bol[i + 1] for i in range(2)):
+                                    # print(f'[cond 3] {t} 볼린저 하단 터치 볼린저-3: {Low_Bol[2]:,.2f} > 종가-3: {df_15_close[2]:,.2f} / 볼린저-2: {Low_Bol[1]:,.2f} > 종가-2: {df_15_close[1]:,.2f} / 볼린저-1: {Low_Bol[0]:,.2f} > 종가-1: {df_15_close[0]:,.2f}')
+                        
+                                if df_15_open < df_15_close and cur_price < Low_Bol[2] * 1.01:
+                                    print(f'[cond 4] {t} < 시가: {df_15_open:,.2f} < 종가: {df_15_close} / 현재가: {cur_price:,.2f} < Low_Bol*1% : {Low_Bol[2]*1.01:,.2f}')
+                                    send_discord_message(f'[cond 4] {t} < 시가: {df_15_open:,.2f} < 종가: {df_15_close} / 현재가: {cur_price:,.2f} < Low_Bol*1% : {Low_Bol[2]*1.01:,.2f}')
+                                    filtered_tickers.append(t)
 
         except Exception as e:
             send_discord_message(f"filtered_tickers/Error processing ticker {t}: {e}")
@@ -235,12 +235,12 @@ def get_best_k(ticker):
     return bestK
 
 def get_best_ticker():
-    selected_tickers = ["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-SOL", "KRW-ADA"]  # 지정된 코인 리스트
-    
+    selected_tickers = ["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-SOL", "KRW-ADA", "KRW-XLM"]  # 지정된 코인 리스트
+    excluded_tickers = ["QI", "ONX", "ETHF", "ETHW", "PURSE", "USDT"]  # 제외할 코인 리스트
     
     try:
         tickers = pyupbit.get_tickers(fiat="KRW")  # 거래 가능한 모든 코인 조회
-        tickers = [ticker for ticker in selected_tickers if ticker in pyupbit.get_tickers(fiat="KRW")]  # 지정된 코인만 조회
+        # tickers = [ticker for ticker in selected_tickers if ticker in pyupbit.get_tickers(fiat="KRW")]  # 지정된 코인만 조회
         balances = upbit.get_balances()
         held_coins = {b['currency'] for b in balances if float(b['balance']) > 0}
 
@@ -253,6 +253,9 @@ def get_best_ticker():
     filtered_time = datetime.now().strftime('%m/%d %H:%M:%S')  # 시작시간 기록
     # filtered_list = filtered_tickers(tickers)
     filtered_list = filtered_tickers(tickers, held_coins)
+    
+    # 제외할 티커를 필터링
+    filtered_list = [ticker for ticker in filtered_list if ticker not in excluded_tickers]
     
     send_discord_message(f"{filtered_time} [{filtered_list}]")
     print(f"[{filtered_list}]")
@@ -395,8 +398,8 @@ def trade_sell(ticker):
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
                 # send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} > ema20:{last_ema20:,.2f}")
                 # print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} > ema20:{last_ema20:,.2f}")
-                send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} srsi : {srsi_k_1} > 0.75")
-                print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} srsi : {srsi_k_1} > 0.75")
+                send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} srsi : {srsi_k_1:,.2f} > 0.75")
+                print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} srsi : {srsi_k_1:,.2f} > 0.75")
                 return sell_order   
             else:
                 return None
