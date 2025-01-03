@@ -193,7 +193,7 @@ def filtered_tickers(tickers, held_coins):
                 #         print(f'[cond 1-2] {t} 임계치 : {threshold_value:,.2f} < atr : {atr:,.2f}')
                     
                 if Low_Bol[2] * 1.03 < up_Bol1 :
-                    print(f'[cond 2] {t} low_bol*4% : {Low_Bol[2]*1.04:,.2f} < up_bol : {up_Bol1:,.2f}')
+                    print(f'[cond 2] {t} low_bol*3% : {Low_Bol[2]*1.03:,.2f} < up_bol : {up_Bol1:,.2f}')
 
                     if any(Low_Bol[i] >= df_15_close[i] for i in range(3)) and all(Low_Bol[i] > Low_Bol[i + 1] for i in range(2)):
                                 # print(f'[cond 3] {t} 볼린저 하단 터치 볼린저-3: {Low_Bol[2]:,.2f} > 종가-3: {df_15_close[2]:,.2f} / 볼린저-2: {Low_Bol[1]:,.2f} > 종가-2: {df_15_close[1]:,.2f} / 볼린저-1: {Low_Bol[0]:,.2f} > 종가-1: {df_15_close[0]:,.2f}')
@@ -540,11 +540,11 @@ def additional_buy_logic():
                             # 매수 결과 메시지 전송
                             if result:
                                 send_discord_message(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 수량: {buy_size} / 볼린저: {Low_Bol[2]:,.2f} / sRSI: {srsi_k_1:,.2f}")
-                                print(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 수량: {buy_size} / 볼린저: {Low_Bol[2]:,.2f} / sRSI: {srsi_k_1:,.2f}")
+                                print(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 수량: {buy_size:,.1f} / 볼린저: {Low_Bol[2]:,.2f} / sRSI: {srsi_k_1:,.2f}")
 
                 else:
                     print(f'조건 미충족: {ticker} / 현재가: {current_price:,.0f} / 수익률 : {profit_rate:,.1f}')
-        time.sleep(180)
+        time.sleep(150)
 
 
 # 매도 쓰레드 생성
