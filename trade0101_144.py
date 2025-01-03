@@ -543,7 +543,7 @@ def additional_buy_logic():
                                 print(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 수량: {buy_size} / 볼린저: {Low_Bol[2]:,.2f} / sRSI: {srsi_k_1:,.2f}")
 
                 else:
-                    print(f'조건 미충족: {ticker} / 현재가: {current_price:,.0f} / 수익률 : {profit_rate:,.2f}')
+                    print(f'조건 미충족: {ticker} / 현재가: {current_price:,.0f} / 수익률 : {profit_rate:,.1f}')
         time.sleep(180)
 
 
