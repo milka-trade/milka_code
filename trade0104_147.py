@@ -41,8 +41,8 @@ def get_balance(ticker):
 
 def get_atr(ticker, period):
     try:
-        df_atr_day = pyupbit.get_ohlcv(ticker, interval="minute15", count=50)
-        time.sleep(0.5)  # API 호출 제한을 위한 대기
+        df_atr_day = pyupbit.get_ohlcv(ticker, interval="minute55", count=50)
+        time.sleep(0.1)  # API 호출 제한을 위한 대기
     except Exception as e:
         print(f"API call failed: {e}")
         return None
@@ -83,7 +83,7 @@ def get_dynamic_threshold(tickers):
 
 def get_ema(ticker, window):
     df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200)
-    time.sleep(0.5)
+    time.sleep(0.1)
 
     if df is not None and not df.empty:
         df['ema'] = ta.trend.EMAIndicator(close=df['close'], window=window).ema_indicator()
@@ -94,7 +94,7 @@ def get_ema(ticker, window):
 
 def stoch_rsi(ticker, interval="minute15"):
     df = pyupbit.get_ohlcv(ticker, interval=interval, count=200)
-    time.sleep(0.5)
+    time.sleep(0.1)
      
     rsi = ta.momentum.RSIIndicator(df['close'], window=14).rsi()
     min_rsi = rsi.rolling(window=14).min()
@@ -127,7 +127,7 @@ def stoch_rsi(ticker, interval="minute15"):
 def get_bollinger_bands(ticker, interval="minute15", window=20, std_dev=2):
     """특정 티커의 볼린저 밴드 상단 및 하단값을 가져오는 함수"""
     df = pyupbit.get_ohlcv(ticker, interval=interval, count=200)
-    time.sleep(0.5)
+    time.sleep(0.1)
     if df is None or df.empty:
         return None  # 데이터가 없으면 None 반환
 
@@ -165,6 +165,7 @@ def filtered_tickers(tickers, held_coins):
         
         try:
             df_day = pyupbit.get_ohlcv(t, interval="day", count=1)
+            time.sleep(0.1)
             if df_day is None or df_day.empty or 'high' not in df_day or 'low' not in df_day or 'open' not in df_day:
                 continue
             
@@ -172,10 +173,12 @@ def filtered_tickers(tickers, held_coins):
             day_value = df_day['value'].tail(1).iloc[0]  # 당일 거래량
 
             df_15 = pyupbit.get_ohlcv(t, interval="minute15", count=3)
+            time.sleep(0.1)
             if df_15 is None or df_15.empty:
                 continue
             
             df_5 = pyupbit.get_ohlcv(t, interval="minute5", count=3)
+            time.sleep(0.1)
             if df_5 is None or df_5.empty:
                 continue
 
@@ -189,6 +192,11 @@ def filtered_tickers(tickers, held_coins):
             Low_Bol_5min = bands_df['Lower_Band'].iloc[-3:].tolist()  # 볼린저 밴드 하단가 리스트
             up_Bol_5min = bands_df['Upper_Band'].iloc[-1]
             # print(f'{t} Low_Bol[0]: {Low_Bol[0]:,.2f} / Low_Bol[1]: {Low_Bol[1]:,.2f} / Low_Bol[2]: {Low_Bol[2]:,.2f}')
+            
+            # bands_df = get_bollinger_bands(t, interval="minute15")
+            # Low_Bol_15min = bands_df['Lower_Band'].iloc[-3:].tolist()  # 볼린저 밴드 하단가 리스트
+            # up_Bol_15min = bands_df['Upper_Band'].iloc[-1]
+            # print(f'{t} Low_Bol[0]: {Low_Bol[0]:,.2f} / Low_Bol[1]: {Low_Bol[1]:,.2f} / Low_Bol[2]: {Low_Bol[2]:,.2f}')
 
             atr = get_atr(t, 14)
             cur_price = pyupbit.get_current_price(t)
@@ -197,14 +205,17 @@ def filtered_tickers(tickers, held_coins):
                 # print(f'[cond 1] {t} 현가 : {cur_price:,.2f} < 시가*5% : {day_open_price_1*1.05:,.2f}')
                 
                 # if threshold_value < atr:
-                    # print(f'[cond 1-2] {t} 임계치 : {threshold_value:,.2f} < atr : {atr:,.2f}')
+                #     print(f'[cond 1-2] {t} 임계치 : {threshold_value:,.2f} < atr : {atr:,.2f}')
                     
-                    if Low_Bol_5min[2] * 1.02 < up_Bol_5min :
-                        # print(f'[cond 2] {t} low_bol*2% : {Low_Bol[2]*1.02:,.2f} < up_bol : {up_Bol1:,.2f}')
+                # if Low_Bol_15min[2] * 1.02 < up_Bol_15min :
+                #     print(f'[cond 2] {t} low_bol*2% : {Low_Bol_15min[2]*1.02:,.2f} < up_bol : {up_Bol_15min:,.2f}')
 
                         # if any(Low_Bol[i] >= df_15_close[i] for i in range(3)) and all(Low_Bol[i] > Low_Bol[i + 1] for i in range(2)):
-                        if any(Low_Bol_5min[i] >= df_5_close[i] for i in range(3)) and all(df_5_open[i] > df_5_close[i] for i in range(3)):
-                            # print(f'[cond 3] {t} 볼린저 하단 터치 볼린저-3: {Low_Bol[2]:,.2f} > 종가-3: {df_15_close[2]:,.2f} / 볼린저-2: {Low_Bol[1]:,.2f} > 종가-2: {df_15_close[1]:,.2f} / 볼린저-1: {Low_Bol[0]:,.2f} > 종가-1: {df_15_close[0]:,.2f}')
+                    if any(Low_Bol_5min[i] >= df_5_close[i] for i in range(3)):
+                        print(f'[cond 3-1] {t} 볼린저 하단 터치: {Low_Bol_5min[2]:,.2f} > 종가: {df_15_close[2]:,.2f}')
+                        
+                        if all(df_5_open[i] > df_5_close[i] for i in range(3)):
+                            print(f'[cond 3-2] {t} 3연속 음봉: 시가: {df_5_open[2]:,.2f} > 종가: {df_15_close[2]:,.2f}')
                         
                             if df_5_close[2] < cur_price < Low_Bol_5min[2] * 1.01:
                                 print(f'[cond 4] {t}  종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} < Low_Bol_5min*1% : {Low_Bol_5min[2]*1.01:,.2f}')
@@ -221,7 +232,7 @@ def get_best_k(ticker):
     bestK = 0.3  # 초기 K 값
     interest = 0  # 초기 수익률
     df = pyupbit.get_ohlcv(ticker, interval="minute5", count=30)
-    time.sleep(0.5)
+    time.sleep(0.1)
 
     if df is None or df.empty:
         return bestK  # 데이터가 없으면 초기 K 반환
@@ -242,84 +253,17 @@ def get_best_k(ticker):
 
     return bestK
 
-# def get_best_ticker():
-#     selected_tickers = ["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-SOL", "KRW-ADA", "KRW-XLM", "KRW-DOGE", "KRW-HBAR", "KRW-SAND"]  # 지정된 코인 리스트
-#     excluded_tickers = ["QI", "ONX", "ETHF", "ETHW", "PURSE", "USDT"]  # 제외할 코인 리스트
-    
-#     try:
-#         tickers = pyupbit.get_tickers(fiat="KRW")  # 거래 가능한 모든 코인 조회
-#         tickers = [ticker for ticker in selected_tickers if ticker in pyupbit.get_tickers(fiat="KRW")]  # 지정된 코인만 조회
-#         # tickers = [
-#         #     ticker for ticker in selected_tickers 
-#         #     if ticker in pyupbit.get_tickers(fiat="KRW") and ticker not in excluded_tickers
-#         # ]
-#         balances = upbit.get_balances()
-#         held_coins = {b['currency'] for b in balances if float(b['balance']) > 0}
-
-#     except Exception as e:
-#         send_discord_message(f"get_best_ticker/티커 조회 중 오류 발생: {e}")
-#         print(f"get_best_ticker/티커 조회 중 오류 발생: {e}")
-#         time.sleep(1)  # API 호출 제한을 위한 대기
-#         return None, None, None
-
-#     filtered_time = datetime.now().strftime('%m/%d %H:%M:%S')  # 시작시간 기록
-#     # filtered_list = filtered_tickers(tickers)
-#     filtered_list = filtered_tickers(tickers, held_coins)
-    
-#     # # 제외할 티커를 필터링
-#     # filtered_list = [ticker for ticker in filtered_list if ticker not in excluded_tickers]
-    
-#     send_discord_message(f"{filtered_time} [{filtered_list}]")
-#     print(f"[{filtered_list}]")
-    
-#     bestC = None  # 초기 최고 코인 초기화
-#     interest = 0  # 초기 수익률
-#     best_k = 0.3  # 초기 K 값
-
-#     for ticker in filtered_list:   # 조회할 코인 필터링
-#         k = get_best_k(ticker)
-#         df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200)
-#         if df is None or df.empty:
-#             continue
-    
-#         df['range'] = (df['high'] - df['low']) * k  # *고가 - 저가)*k로 range열 생성
-#         df['target'] = df['open'] + df['range'].shift(1)  # 시가 + range로 target열 생성
-#         df['ror'] = np.where(df['high'] > df['open'], df['close'] / df['open'], 1)  # 수익률 계산 : 시가보다 고가가 높으면 거래성사, 수익률(종가/시가) 계산
-#         df['hpr'] = df['ror'].cumprod()  # 누적 수익률 계산
-
-#         if interest < df['hpr'].iloc[-1]:  # 현재 수익률이 이전보다 높으으면 업데이트
-#             bestC = ticker
-#             interest = df['hpr'].iloc[-1]
-#             best_k = k  # 최적 K 값도 업데이트
-
-#     return bestC, interest, best_k  # 최고의 코인, 수익률, K 반환
-
 def get_best_ticker():
+    selected_tickers = ["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-SOL", "KRW-ADA", "KRW-XLM", "KRW-DOGE", "KRW-HBAR", "KRW-SAND"]  # 지정된 코인 리스트
     excluded_tickers = ["QI", "ONX", "ETHF", "ETHW", "PURSE", "USDT"]  # 제외할 코인 리스트
     
     try:
-        # SOL 코인의 거래량 가져오기
-        df_sol = pyupbit.get_ohlcv('KRW-SOL', interval="day", count=1)
-        if df_sol is None or df_sol.empty or 'value' not in df_sol:
-            raise ValueError("KRW-SOL의 거래량을 가져오는 데 실패했습니다.")
-        
-        krw_sol_day_value = df_sol['value'].tail(1).iloc[0]  # KRW-SOL의 당일 거래량
-
-        # 거래 가능한 모든 코인 조회
-        all_tickers = pyupbit.get_tickers(fiat="KRW")
-        selected_tickers = []
-
-        # 모든 코인에서 거래량 확인 후 SOL 거래량보다 큰 코인만 추가
-        for ticker in all_tickers:
-            df = pyupbit.get_ohlcv(ticker, interval="day", count=1)
-            if df is not None and not df.empty:
-                day_value = df['value'].tail(1).iloc[0]  # 해당 코인의 당일 거래량
-                if day_value > krw_sol_day_value:  # SOL의 거래량보다 높은 경우
-                    selected_tickers.append(ticker)
-
-        # 제외할 코인 리스트에서 필터링
-        selected_tickers = [ticker for ticker in selected_tickers if ticker not in excluded_tickers]
-
+        tickers = pyupbit.get_tickers(fiat="KRW")  # 거래 가능한 모든 코인 조회
+        tickers = [ticker for ticker in selected_tickers if ticker in pyupbit.get_tickers(fiat="KRW")]  # 지정된 코인만 조회
+        # tickers = [
+        #     ticker for ticker in selected_tickers 
+        #     if ticker in pyupbit.get_tickers(fiat="KRW") and ticker not in excluded_tickers
+        # ]
         balances = upbit.get_balances()
         held_coins = {b['currency'] for b in balances if float(b['balance']) > 0}
 
@@ -330,8 +274,12 @@ def get_best_ticker():
         return None, None, None
 
     filtered_time = datetime.now().strftime('%m/%d %H:%M:%S')  # 시작시간 기록
-    filtered_list = filtered_tickers(selected_tickers, held_coins)  # 필터링된 리스트
-
+    # filtered_list = filtered_tickers(tickers)
+    filtered_list = filtered_tickers(tickers, held_coins)
+    
+    # # 제외할 티커를 필터링
+    # filtered_list = [ticker for ticker in filtered_list if ticker not in excluded_tickers]
+    
     send_discord_message(f"{filtered_time} [{filtered_list}]")
     print(f"[{filtered_list}]")
     
@@ -341,7 +289,8 @@ def get_best_ticker():
 
     for ticker in filtered_list:   # 조회할 코인 필터링
         k = get_best_k(ticker)
-        df = pyupbit.get_ohlcv(ticker, interval="minute5", count=30)
+        df = pyupbit.get_ohlcv(ticker, interval="minute5", count=200)
+        time.sleep(0.1)
         if df is None or df.empty:
             continue
     
@@ -350,16 +299,84 @@ def get_best_ticker():
         df['ror'] = np.where(df['high'] > df['open'], df['close'] / df['open'], 1)  # 수익률 계산 : 시가보다 고가가 높으면 거래성사, 수익률(종가/시가) 계산
         df['hpr'] = df['ror'].cumprod()  # 누적 수익률 계산
 
-        if interest < df['hpr'].iloc[-1]:  # 현재 수익률이 이전보다 높으시면 업데이트
+        if interest < df['hpr'].iloc[-1]:  # 현재 수익률이 이전보다 높으으면 업데이트
             bestC = ticker
             interest = df['hpr'].iloc[-1]
             best_k = k  # 최적 K 값도 업데이트
 
     return bestC, interest, best_k  # 최고의 코인, 수익률, K 반환
 
+# def get_best_ticker():
+#     excluded_tickers = ["QI", "ONX", "ETHF", "ETHW", "PURSE", "USDT"]  # 제외할 코인 리스트
+    
+#     try:
+#         # SOL 코인의 거래량 가져오기
+#         df_sol = pyupbit.get_ohlcv('KRW-SOL', interval="day", count=1)
+        # time.sleep(0.1)
+#         if df_sol is None or df_sol.empty or 'value' not in df_sol:
+#             raise ValueError("KRW-SOL의 거래량을 가져오는 데 실패했습니다.")
+        
+#         krw_sol_day_value = df_sol['value'].tail(1).iloc[0]  # KRW-SOL의 당일 거래량
+
+#         # 거래 가능한 모든 코인 조회
+#         all_tickers = pyupbit.get_tickers(fiat="KRW")
+#         selected_tickers = []
+
+#         # 모든 코인에서 거래량 확인 후 SOL 거래량보다 큰 코인만 추가
+#         for ticker in all_tickers:
+#             df = pyupbit.get_ohlcv(ticker, interval="day", count=1)
+                # time.sleep(0.1)
+#             if df is not None and not df.empty:
+#                 day_value = df['value'].tail(1).iloc[0]  # 해당 코인의 당일 거래량
+#                 if day_value > krw_sol_day_value:  # SOL의 거래량보다 높은 경우
+#                     # print(f"{ticker} 일 거래량: {day_value:,.0f} > SOL 거래량: {krw_sol_day_value:,.0f}" )
+#                     selected_tickers.append(ticker)
+
+#         # 제외할 코인 리스트에서 필터링
+#         selected_tickers = [ticker for ticker in selected_tickers if ticker not in excluded_tickers]
+#         print(f"[{selected_tickers}]")
+        
+#         balances = upbit.get_balances()
+#         held_coins = {b['currency'] for b in balances if float(b['balance']) > 0}
+
+#     except Exception as e:
+#         send_discord_message(f"get_best_ticker/티커 조회 중 오류 발생: {e}")
+#         print(f"get_best_ticker/티커 조회 중 오류 발생: {e}")
+#         time.sleep(1)  # API 호출 제한을 위한 대기
+#         return None, None, None
+
+#     filtered_time = datetime.now().strftime('%m/%d %H:%M:%S')  # 시작시간 기록
+#     filtered_list = filtered_tickers(selected_tickers, held_coins)  # 필터링된 리스트
+
+#     send_discord_message(f"{filtered_time} [{filtered_list}]")
+#     print(f"[{filtered_list}]")
+    
+#     bestC = None  # 초기 최고 코인 초기화
+#     interest = 0  # 초기 수익률
+#     best_k = 0.3  # 초기 K 값
+
+#     for ticker in filtered_list:   # 조회할 코인 필터링
+#         k = get_best_k(ticker)
+#         df = pyupbit.get_ohlcv(ticker, interval="minute5", count=30)
+#         if df is None or df.empty:
+#             continue
+    
+#         df['range'] = (df['high'] - df['low']) * k  # *고가 - 저가)*k로 range열 생성
+#         df['target'] = df['open'] + df['range'].shift(1)  # 시가 + range로 target열 생성
+#         df['ror'] = np.where(df['high'] > df['open'], df['close'] / df['open'], 1)  # 수익률 계산 : 시가보다 고가가 높으면 거래성사, 수익률(종가/시가) 계산
+#         df['hpr'] = df['ror'].cumprod()  # 누적 수익률 계산
+
+#         if interest < df['hpr'].iloc[-1]:  # 현재 수익률이 이전보다 높으시면 업데이트
+#             bestC = ticker
+#             interest = df['hpr'].iloc[-1]
+#             best_k = k  # 최적 K 값도 업데이트
+
+#     return bestC, interest, best_k  # 최고의 코인, 수익률, K 반환
+
     
 def get_target_price(ticker, k):  #변동성 돌파 전략 구현
-    df = pyupbit.get_ohlcv(ticker, interval="minute1", count=1) 
+    df = pyupbit.get_ohlcv(ticker, interval="minute1", count=1)
+    time.sleep(0.1)
     if df is not None and not df.empty:
         return df['close'].iloc[-1] + (df['high'].iloc[-1] - df['low'].iloc[-1]) * k
     return 0
@@ -387,8 +404,8 @@ def trade_buy(ticker, k):
         
         while attempt < max_retries:
                 current_price = pyupbit.get_current_price(ticker)
-                print(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / < 목표가:{target_price:,.2f} / 0 < sRSI_K_1:{srsi_k_1:,.2f} < 0.4/ 시도:{attempt} - 최대:{max_retries}")
-                # send_discord_message(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / < 목표가:{target_price:,.2f} / 0.2 < sRSI_K_2:{srsi_k_2:,.2f} < sRSI_K_1:{srsi_k_1:,.2f} < 0.4/ 시도:{attempt} - 최대:{max_retries}")
+                print(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / < 목표가:{target_price:,.2f} / 0 < sRSI_K_5:{srsi_k_1:,.2f} < 0.4/ 시도:{attempt} - 최대:{max_retries}")
+                send_discord_message(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / < 목표가:{target_price:,.2f} / 0 < sRSI_K_5:{srsi_k_1:,.2f} < 0.4/ 시도:{attempt} - 최대:{max_retries}")
                 
                 if current_price <= target_price and srsi_k_1 < 0.4:
                     buy_attempts = 3
@@ -421,6 +438,7 @@ def trade_sell(ticker):
     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
     last_ema20 = get_ema(ticker, 20)
     df_15 = pyupbit.get_ohlcv(ticker, interval="minute15", count=1)
+    time.sleep(0.1)
     df_15_high = df_15['high'].tail(1).iloc[0]
     
     stoch_rsi_15min = stoch_rsi(ticker, interval="minute15")   #스토캐스틱 RSI 계산
@@ -526,6 +544,7 @@ def selling_logic():
     while True:
         try:
             balances = upbit.get_balances()
+            # print(balances)
             for b in balances:
                 if b['currency'] not in ["KRW", "QI", "ONX", "ETHF", "ETHW", "PURSE"]:
                         ticker = f"KRW-{b['currency']}"
@@ -588,6 +607,7 @@ def additional_buy_logic():
                 current_price = pyupbit.get_current_price(ticker)  # 현재가 조회
                 
                 df_5 = pyupbit.get_ohlcv(ticker, interval="minute5", count=3)
+                time.sleep(0.1)
                 if df_5 is None or df_5.empty:
                     continue
             
