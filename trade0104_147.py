@@ -139,7 +139,8 @@ def filtered_tickers(tickers, held_coins):
 
             bands_df = get_bollinger_bands(t, interval="minute5")
             Low_Bol_5min = bands_df['Lower_Band'].iloc[-3:].tolist()  # 볼린저 밴드 하단가 리스트
-            up_Bol_5min = bands_df['Upper_Band'].iloc[-1]
+            # up_Bol_5min = bands_df['Upper_Band'].iloc[-1]
+            up_Bol_5min = bands_df['Upper_Band'].iloc[-3].tolist()
             
             # bands_df = get_bollinger_bands(t, interval="minute15")
             # Low_Bol_15min = bands_df['Lower_Band'].iloc[-3:].tolist()  # 볼린저 밴드 하단가 리스트
@@ -154,16 +155,19 @@ def filtered_tickers(tickers, held_coins):
                 # if Low_Bol_15min[2] * 1.02 < up_Bol_15min :
                 #     print(f'[cond 2] {t} low_bol*2% : {Low_Bol_15min[2]*1.02:,.2f} < up_bol : {up_Bol_15min:,.2f}')
 
-                if any(Low_Bol_5min[i] >= df_5_close[i] for i in range(3)):
-                    print(f'[cond 3-1] {t} 볼린저 하단 터치: {Low_Bol_5min[2]:,.2f} > 종가: {df_15_close[2]:,.2f}')
-                        
-                    if all(df_5_open[i] > df_5_close[i] for i in range(3)):
-                        print(f'[cond 3-2] {t} 3연속 음봉: 시가: {df_5_open[2]:,.2f} > 종가: {df_15_close[2]:,.2f}')
+                if any(Low_Bol_5min[i] >= df_5_close[i] for i in range(3)) : 
+                    print(f'[cond 3-1] {t} 볼린저 5분봉 하단 터치')
                     
-                        if df_5_close[2] < cur_price < Low_Bol_5min[2] * 1.005 or cur_price < Low_Bol_5min[2]*0.99:
-                            print(f'[cond 4] {t}  종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} < Low_Bol_5min: {Low_Bol_5min[2]:,.2f}')
-                            send_discord_message(f'[cond 4] {t}  종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} < Low_Bol_5min: {Low_Bol_5min[2]:,.2f}')
-                            filtered_tickers.append(t)
+                    if all(up_Bol_5min[i]-Low_Bol_5min[i] < up_Bol_5min[i+1] - Low_Bol_5min[i+1] for i in range(2)):
+                        print(f'[cond 3-2] {t} 볼린저 폭 확대 {up_Bol_5min[0]:,.1f}-{Low_Bol_5min[0]:,.1f} < {up_Bol_5min[1]:,.1f}-{Low_Bol_5min[1]:,.1f} < {up_Bol_5min[2]:,.1f}-{Low_Bol_5min[2]:,.1f}')
+                        
+                        if all(df_5_open[i] > df_5_close[i] for i in range(3)):
+                            print(f'[cond 3-3] {t} 3연속 음봉 / 시가: {df_5_open[2]:,.2f} > 종가: {df_15_close[2]:,.2f}')
+                        
+                            if df_5_close[2] < cur_price < Low_Bol_5min[2] * 1.005 or cur_price < Low_Bol_5min[2]*0.99:
+                                print(f'[cond 4] {t}  종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} / Low_Bol_5min: {Low_Bol_5min[2]:,.2f}')
+                                send_discord_message(f'[cond 4] {t}  종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} / Low_Bol_5min: {Low_Bol_5min[2]:,.2f}')
+                                filtered_tickers.append(t)
 
         except Exception as e:
             send_discord_message(f"filtered_tickers/Error processing ticker {t}: {e}")
@@ -362,7 +366,7 @@ def trade_sell(ticker):
                     time.sleep(1)  # 짧은 대기                                                                                                                                                    
                 attempts += 1  # 조회 횟수 증가
                 
-            if profit_rate >= 0.6 and df_15_high > up_Bol1*0.999 and srsi_k_1 > 0.8:
+            if profit_rate >= 0.6 and df_15_high > up_Bol1*0.995 and srsi_k_1 > 0.8:
             # if profit_rate > 0.6 and current_price >= last_ema20 :
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
                 # send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} > ema20:{last_ema20:,.2f}")
@@ -424,7 +428,7 @@ def selling_logic():
                 if b['currency'] not in ["KRW", "QI", "ONX", "ETHF", "ETHW", "PURSE"]:
                         ticker = f"KRW-{b['currency']}"
                         trade_sell(ticker)
-                time.sleep(1)
+                time.sleep(0.5)
 
         except Exception as e:
             print(f"selling_logic / 에러 발생: {e}")
