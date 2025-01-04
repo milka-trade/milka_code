@@ -39,48 +39,6 @@ def get_balance(ticker):
         return 0
     return 0
 
-def get_atr(ticker, period):
-    try:
-        df_atr_day = pyupbit.get_ohlcv(ticker, interval="minute55", count=50)
-        time.sleep(0.1)  # API 호출 제한을 위한 대기
-    except Exception as e:
-        print(f"API call failed: {e}")
-        return None
-
-    if df_atr_day is None or df_atr_day.empty:
-        print(f"get_atr/ Error: No data for {ticker}")
-        return None  # 또는 기본값을 반환할 수 있음
-    
-    high_low = df_atr_day['high'] - df_atr_day['low']
-    high_close = abs(df_atr_day['high'] - df_atr_day['close'].shift().fillna(0))
-    low_close = abs(df_atr_day['low'] - df_atr_day['close'].shift().fillna(0))
-    tr = high_low.combine(high_close, max).combine(low_close, max)
-    atr = tr.rolling(window=period).mean()
-
-    if atr.empty or atr.iloc[-1] is None:
-        print(f"Error: No ATR data for {ticker}")
-        return None  # 또는 기본값을 반환할 수 있음
-    
-    return atr.iloc[-1]
-
-def get_dynamic_threshold(tickers):
-    atr_values = []
-    for t in tickers:
-        try:
-            atr = get_atr(t, 21)
-            # print(f"ATR for {t}: {atr}")
-            if atr is not None and not np.isnan(atr):  # ATR이 None이나 NaN이 아닐 경우에만 추가
-                atr_values.append(atr)
-
-        except Exception as e:
-            print(f"Error getting ATR for {t}: {e}")
-            continue
-
-    # NaN 값 필터링 후 중앙값 계산
-    atr_values = [value for value in atr_values if not np.isnan(value)]
-
-    return np.median(atr_values) if atr_values else 0.05  # Fallback to 0.05 if no ATR values
-
 def get_ema(ticker, window):
     df = pyupbit.get_ohlcv(ticker, interval="minute15", count=200)
     time.sleep(0.1)
@@ -149,14 +107,6 @@ def get_bollinger_bands(ticker, interval="minute15", window=20, std_dev=2):
 def filtered_tickers(tickers, held_coins):
     """특정 조건에 맞는 티커 필터링"""
     filtered_tickers = []
-    # threshold_value = get_dynamic_threshold(tickers)
-
-    # 'KRW-SOL'의 거래량을 가져옵니다.
-    # df_sol = pyupbit.get_ohlcv('KRW-SOL', interval="day", count=1)
-    # if df_sol is None or df_sol.empty or 'value' not in df_sol:
-    #     raise ValueError("KRW-SOL의 거래량을 가져오는 데 실패했습니다.")
-    
-    # krw_sol_day_value = df_sol['value'].tail(1).iloc[0]  # KRW-SOL의 당일 거래량
     
     for t in tickers:
         currency = t.split("-")[1]      # 티커에서 통화 정보 추출
@@ -170,7 +120,6 @@ def filtered_tickers(tickers, held_coins):
                 continue
             
             day_open_price_1 = df_day['open'].tail(1).iloc[0]  # 당일 시가
-            day_value = df_day['value'].tail(1).iloc[0]  # 당일 거래량
 
             df_15 = pyupbit.get_ohlcv(t, interval="minute15", count=3)
             time.sleep(0.1)
@@ -191,36 +140,30 @@ def filtered_tickers(tickers, held_coins):
             bands_df = get_bollinger_bands(t, interval="minute5")
             Low_Bol_5min = bands_df['Lower_Band'].iloc[-3:].tolist()  # 볼린저 밴드 하단가 리스트
             up_Bol_5min = bands_df['Upper_Band'].iloc[-1]
-            # print(f'{t} Low_Bol[0]: {Low_Bol[0]:,.2f} / Low_Bol[1]: {Low_Bol[1]:,.2f} / Low_Bol[2]: {Low_Bol[2]:,.2f}')
             
             # bands_df = get_bollinger_bands(t, interval="minute15")
             # Low_Bol_15min = bands_df['Lower_Band'].iloc[-3:].tolist()  # 볼린저 밴드 하단가 리스트
             # up_Bol_15min = bands_df['Upper_Band'].iloc[-1]
             # print(f'{t} Low_Bol[0]: {Low_Bol[0]:,.2f} / Low_Bol[1]: {Low_Bol[1]:,.2f} / Low_Bol[2]: {Low_Bol[2]:,.2f}')
 
-            # atr = get_atr(t, 14)
             cur_price = pyupbit.get_current_price(t)
 
             if cur_price < day_open_price_1*1.05 :
                 # print(f'[cond 1] {t} 현가 : {cur_price:,.2f} < 시가*5% : {day_open_price_1*1.05:,.2f}')
-                
-                # if threshold_value < atr:
-                #     print(f'[cond 1-2] {t} 임계치 : {threshold_value:,.2f} < atr : {atr:,.2f}')
-                    
+                                   
                 # if Low_Bol_15min[2] * 1.02 < up_Bol_15min :
                 #     print(f'[cond 2] {t} low_bol*2% : {Low_Bol_15min[2]*1.02:,.2f} < up_bol : {up_Bol_15min:,.2f}')
 
-                        # if any(Low_Bol[i] >= df_15_close[i] for i in range(3)) and all(Low_Bol[i] > Low_Bol[i + 1] for i in range(2)):
-                    if any(Low_Bol_5min[i] >= df_5_close[i] for i in range(3)):
-                        print(f'[cond 3-1] {t} 볼린저 하단 터치: {Low_Bol_5min[2]:,.2f} > 종가: {df_15_close[2]:,.2f}')
+                if any(Low_Bol_5min[i] >= df_5_close[i] for i in range(3)):
+                    print(f'[cond 3-1] {t} 볼린저 하단 터치: {Low_Bol_5min[2]:,.2f} > 종가: {df_15_close[2]:,.2f}')
                         
-                        if all(df_5_open[i] > df_5_close[i] for i in range(3)):
-                            print(f'[cond 3-2] {t} 3연속 음봉: 시가: {df_5_open[2]:,.2f} > 종가: {df_15_close[2]:,.2f}')
-                        
-                            if df_5_close[2] < cur_price < Low_Bol_5min[2] * 1.01 or cur_price < Low_Bol_5min[2]*0.99:
-                                print(f'[cond 4] {t}  종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} < Low_Bol_5min: {Low_Bol_5min[2]:,.2f}')
-                                send_discord_message(f'[cond 4] {t}  종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} < Low_Bol_5min: {Low_Bol_5min[2]:,.2f}')
-                                filtered_tickers.append(t)
+                    if all(df_5_open[i] > df_5_close[i] for i in range(3)):
+                        print(f'[cond 3-2] {t} 3연속 음봉: 시가: {df_5_open[2]:,.2f} > 종가: {df_15_close[2]:,.2f}')
+                    
+                        if df_5_close[2] < cur_price < Low_Bol_5min[2] * 1.01 or cur_price < Low_Bol_5min[2]*0.99:
+                            print(f'[cond 4] {t}  종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} < Low_Bol_5min: {Low_Bol_5min[2]:,.2f}')
+                            send_discord_message(f'[cond 4] {t}  종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} < Low_Bol_5min: {Low_Bol_5min[2]:,.2f}')
+                            filtered_tickers.append(t)
 
         except Exception as e:
             send_discord_message(f"filtered_tickers/Error processing ticker {t}: {e}")
@@ -255,7 +198,7 @@ def get_best_k(ticker):
 
 def get_best_ticker():
     selected_tickers = ["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-SOL", "KRW-ADA", "KRW-XLM", "KRW-DOGE", "KRW-HBAR", "KRW-SAND"]  # 지정된 코인 리스트
-    excluded_tickers = ["QI", "ONX", "ETHF", "ETHW", "PURSE", "USDT"]  # 제외할 코인 리스트
+    # excluded_tickers = ["QI", "ONX", "ETHF", "ETHW", "PURSE", "USDT"]  # 제외할 코인 리스트
     
     try:
         tickers = pyupbit.get_tickers(fiat="KRW")  # 거래 가능한 모든 코인 조회
@@ -305,74 +248,6 @@ def get_best_ticker():
             best_k = k  # 최적 K 값도 업데이트
 
     return bestC, interest, best_k  # 최고의 코인, 수익률, K 반환
-
-# def get_best_ticker():
-#     excluded_tickers = ["QI", "ONX", "ETHF", "ETHW", "PURSE", "USDT"]  # 제외할 코인 리스트
-    
-#     try:
-#         # SOL 코인의 거래량 가져오기
-#         df_sol = pyupbit.get_ohlcv('KRW-SOL', interval="day", count=1)
-        # time.sleep(0.1)
-#         if df_sol is None or df_sol.empty or 'value' not in df_sol:
-#             raise ValueError("KRW-SOL의 거래량을 가져오는 데 실패했습니다.")
-        
-#         krw_sol_day_value = df_sol['value'].tail(1).iloc[0]  # KRW-SOL의 당일 거래량
-
-#         # 거래 가능한 모든 코인 조회
-#         all_tickers = pyupbit.get_tickers(fiat="KRW")
-#         selected_tickers = []
-
-#         # 모든 코인에서 거래량 확인 후 SOL 거래량보다 큰 코인만 추가
-#         for ticker in all_tickers:
-#             df = pyupbit.get_ohlcv(ticker, interval="day", count=1)
-                # time.sleep(0.1)
-#             if df is not None and not df.empty:
-#                 day_value = df['value'].tail(1).iloc[0]  # 해당 코인의 당일 거래량
-#                 if day_value > krw_sol_day_value:  # SOL의 거래량보다 높은 경우
-#                     # print(f"{ticker} 일 거래량: {day_value:,.0f} > SOL 거래량: {krw_sol_day_value:,.0f}" )
-#                     selected_tickers.append(ticker)
-
-#         # 제외할 코인 리스트에서 필터링
-#         selected_tickers = [ticker for ticker in selected_tickers if ticker not in excluded_tickers]
-#         print(f"[{selected_tickers}]")
-        
-#         balances = upbit.get_balances()
-#         held_coins = {b['currency'] for b in balances if float(b['balance']) > 0}
-
-#     except Exception as e:
-#         send_discord_message(f"get_best_ticker/티커 조회 중 오류 발생: {e}")
-#         print(f"get_best_ticker/티커 조회 중 오류 발생: {e}")
-#         time.sleep(1)  # API 호출 제한을 위한 대기
-#         return None, None, None
-
-#     filtered_time = datetime.now().strftime('%m/%d %H:%M:%S')  # 시작시간 기록
-#     filtered_list = filtered_tickers(selected_tickers, held_coins)  # 필터링된 리스트
-
-#     send_discord_message(f"{filtered_time} [{filtered_list}]")
-#     print(f"[{filtered_list}]")
-    
-#     bestC = None  # 초기 최고 코인 초기화
-#     interest = 0  # 초기 수익률
-#     best_k = 0.3  # 초기 K 값
-
-#     for ticker in filtered_list:   # 조회할 코인 필터링
-#         k = get_best_k(ticker)
-#         df = pyupbit.get_ohlcv(ticker, interval="minute5", count=30)
-#         if df is None or df.empty:
-#             continue
-    
-#         df['range'] = (df['high'] - df['low']) * k  # *고가 - 저가)*k로 range열 생성
-#         df['target'] = df['open'] + df['range'].shift(1)  # 시가 + range로 target열 생성
-#         df['ror'] = np.where(df['high'] > df['open'], df['close'] / df['open'], 1)  # 수익률 계산 : 시가보다 고가가 높으면 거래성사, 수익률(종가/시가) 계산
-#         df['hpr'] = df['ror'].cumprod()  # 누적 수익률 계산
-
-#         if interest < df['hpr'].iloc[-1]:  # 현재 수익률이 이전보다 높으시면 업데이트
-#             bestC = ticker
-#             interest = df['hpr'].iloc[-1]
-#             best_k = k  # 최적 K 값도 업데이트
-
-#     return bestC, interest, best_k  # 최고의 코인, 수익률, K 반환
-
     
 def get_target_price(ticker, k):  #변동성 돌파 전략 구현
     df = pyupbit.get_ohlcv(ticker, interval="minute1", count=1)
@@ -403,28 +278,28 @@ def trade_buy(ticker, k):
         target_price = get_target_price(ticker, k)
         
         while attempt < max_retries:
-                current_price = pyupbit.get_current_price(ticker)
-                print(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / < 목표가:{target_price:,.2f} / 0 < sRSI_K_5:{srsi_k_1:,.2f} < 0.4/ 시도:{attempt} - 최대:{max_retries}")
-                send_discord_message(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / < 목표가:{target_price:,.2f} / 0 < sRSI_K_5:{srsi_k_1:,.2f} < 0.4/ 시도:{attempt} - 최대:{max_retries}")
-                
-                if current_price <= target_price and srsi_k_1 < 0.4:
-                    buy_attempts = 3
-                    for i in range(buy_attempts):
-                        try:
-                            buy_order = upbit.buy_market_order(ticker, buy_size)
-                            print(f"매수 성공: [{ticker}]")
-                            send_discord_message(f"매수 성공: [{ticker}] 현재가:{current_price:,.2f} < 목표가:{target_price:,.2f} / sRSI_K_5min:{srsi_k_1:,.2f} < 0.4 / / 시도횟수:{attempt}")
-                            return buy_order
+            current_price = pyupbit.get_current_price(ticker)
+            print(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / < 목표가:{target_price:,.2f} / 0 < sRSI_K_5:{srsi_k_1:,.2f} < 0.4/ 시도:{attempt} - 최대:{max_retries}")
+            send_discord_message(f"가격 확인 중: [{ticker}] 현재가:{current_price:,.2f} / < 목표가:{target_price:,.2f} / 0 < sRSI_K_5:{srsi_k_1:,.2f} < 0.4/ 시도:{attempt} - 최대:{max_retries}")
+            
+            if current_price <= target_price and srsi_k_1 < 0.4:
+                buy_attempts = 3
+                for i in range(buy_attempts):
+                    try:
+                        buy_order = upbit.buy_market_order(ticker, buy_size)
+                        print(f"매수 성공: [{ticker}]")
+                        send_discord_message(f"매수 성공: [{ticker}] 현재가:{current_price:,.2f} < 목표가:{target_price:,.2f} / sRSI_K_5min:{srsi_k_1:,.2f} < 0.4 / / 시도횟수:{attempt}")
+                        return buy_order
 
-                        except Exception as e:
-                            print(f"매수 주문 실행 중 오류 발생: {e}, 재시도 중...({i+1}/{buy_attempts})")
-                            send_discord_message(f"매수 주문 실행 중 오류 발생: {e}, 재시도 중...({i+1}/{buy_attempts})")
-                            time.sleep(5 * (i + 1))  # Exponential backoff
+                    except Exception as e:
+                        print(f"매수 주문 실행 중 오류 발생: {e}, 재시도 중...({i+1}/{buy_attempts})")
+                        send_discord_message(f"매수 주문 실행 중 오류 발생: {e}, 재시도 중...({i+1}/{buy_attempts})")
+                        time.sleep(5 * (i + 1)) 
 
-                        return "Buy order failed", None
-                else:
-                    attempt += 1  # 시도 횟수 증가
-                    time.sleep(30)
+                    return "Buy order failed", None
+            else:
+                attempt += 1  # 시도 횟수 증가
+                time.sleep(30)
 
         print(f"3회 시도완료: [{ticker}], 목표가 범위에 도달하지 못함")
         return "Price not in range after max attempts", None
@@ -444,7 +319,7 @@ def trade_sell(ticker):
     stoch_rsi_15min = stoch_rsi(ticker, interval="minute15")   #스토캐스틱 RSI 계산
     if not stoch_rsi_15min.empty and len(stoch_rsi_15min) >= 2:
         srsi_k_1 = stoch_rsi_15min['%K'].iloc[-1]
-        srsi_k_2 = stoch_rsi_15min['%K'].iloc[-2]
+        # srsi_k_2 = stoch_rsi_15min['%K'].iloc[-2]
         # srsi_d = stoch_rsi_15min['%D'].iloc[-1]
                
     else:
@@ -487,13 +362,13 @@ def trade_sell(ticker):
                     time.sleep(1)  # 짧은 대기                                                                                                                                                    
                 attempts += 1  # 조회 횟수 증가
                 
-            if profit_rate >= 0.8 and df_15_high > up_Bol1*0.995 and srsi_k_1 > 0.8:
+            if profit_rate >= 0.8 and df_15_high > up_Bol1*0.999 and srsi_k_1 > 0.8:
             # if profit_rate > 0.6 and current_price >= last_ema20 :
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
                 # send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} > ema20:{last_ema20:,.2f}")
                 # print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} > ema20:{last_ema20:,.2f}")
-                send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} srsi : {srsi_k_1:,.2f} > 0.75")
-                print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} srsi : {srsi_k_1:,.2f} > 0.75")
+                send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} srsi: {srsi_k_1:,.2f} > 0.8")
+                print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} srsi: {srsi_k_1:,.2f} > 0.8")
                 return sell_order   
             else:
                 return None
@@ -623,7 +498,7 @@ def additional_buy_logic():
                 
                 stoch_rsi_5min = stoch_rsi(ticker, interval="minute5")   #스토캐스틱 RSI 계산
                 srsi_k_1 = stoch_rsi_5min['%K'].iloc[-1]
-                srsi_k_2 = stoch_rsi_5min['%K'].iloc[-2]
+                # srsi_k_2 = stoch_rsi_5min['%K'].iloc[-2]
 
                 if profit_rate < -4 and any(Low_Bol[i] >= df_5_close[i] for i in range(3)) and all(df_5_open[i] > df_5_close[i] for i in range(3)):
                     if df_5_close[2] < current_price < Low_Bol[2] * 1.01:
@@ -635,8 +510,8 @@ def additional_buy_logic():
 
                             # 매수 결과 메시지 전송
                             if result:
-                                send_discord_message(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size} / 볼린저: {Low_Bol[2]:,.2f} / sRSI_5min: {srsi_k_1:,.2f}")
-                                print(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.1f} / 볼린저: {Low_Bol[2]:,.2f} / sRSI_5min: {srsi_k_1:,.2f}")
+                                send_discord_message(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.0f} / 볼린저: {Low_Bol[2]:,.2f} / sRSI_5min: {srsi_k_1:,.2f}")
+                                print(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.0f} / 볼린저: {Low_Bol[2]:,.2f} / sRSI_5min: {srsi_k_1:,.2f}")
 
                 else:
                     print(f'조건 미충족: {ticker} / 현재가: {current_price:,.0f} / 수익률 : {profit_rate:,.1f}')
