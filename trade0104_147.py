@@ -530,7 +530,7 @@ def selling_logic():
                 if b['currency'] not in ["KRW", "QI", "ONX", "ETHF", "ETHW", "PURSE"]:
                         ticker = f"KRW-{b['currency']}"
                         trade_sell(ticker)
-                time.sleep(0.5)
+                time.sleep(1)
 
         except Exception as e:
             print(f"selling_logic / 에러 발생: {e}")
