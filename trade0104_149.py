@@ -135,11 +135,11 @@ def filtered_tickers(tickers, held_coins):
             # df_15_open = df_15['open'].iloc[-3:].tolist()
             
             df_5_close = df_5['close'].iloc[-3:].tolist()  # 15분 봉 종가 리스트
-            df_5_open = df_5['open'].iloc[-3:].tolist()
+            # df_5_open = df_5['open'].iloc[-3:].tolist()
 
             bands_df = get_bollinger_bands(t, interval="minute5")
             Low_Bol_5min = bands_df['Lower_Band'].iloc[-3:].tolist()  # 볼린저 밴드 하단가 리스트
-            up_Bol_5min = bands_df['Upper_Band'].iloc[-3].tolist()
+            # up_Bol_5min = bands_df['Upper_Band'].iloc[-3].tolist()
 
             # 상단 및 하단 밴드 값 추출
             upper_band = bands_df['Upper_Band'].values
@@ -173,7 +173,7 @@ def filtered_tickers(tickers, held_coins):
                     # if all(df_5_open[i] > df_5_close[i] for i in range(3)):
                     #     print(f'[cond 3-3] {t} 3연속 음봉 / 시가: {df_5_open[2]:,.2f} > 종가: {df_5_close[2]:,.2f}')
                     
-                    if df_5_close[2] < cur_price < Low_Bol_5min[2] * 1.005 or cur_price < Low_Bol_5min[2]*0.99:
+                    if (df_5_close[2] < cur_price < Low_Bol_5min[2] * 1.005) or (cur_price < Low_Bol_5min[2]*0.99) :
                         print(f'[cond 4] {t}  종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} / Low_Bol_5min: {Low_Bol_5min[2]:,.2f}')
                         send_discord_message(f'[cond 4] {t}  종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} / Low_Bol_5min: {Low_Bol_5min[2]:,.2f}')
                         filtered_tickers.append(t)
@@ -302,8 +302,8 @@ def trade_buy(ticker, k):
     stoch_rsi_5min = stoch_rsi(ticker, interval="5min")   #스토캐스틱 RSI 계산
     if not stoch_rsi_5min.empty and len(stoch_rsi_5min) >= 2:
         srsi_k_1 = stoch_rsi_5min['%K'].iloc[-1]
-        srsi_k_2 = stoch_rsi_5min['%K'].iloc[-2]
-        srsi_d = stoch_rsi_5min['%D'].iloc[-1]
+        # srsi_k_2 = stoch_rsi_5min['%K'].iloc[-2]
+        # srsi_d = stoch_rsi_5min['%D'].iloc[-1]
                
     else:
         raise ValueError("stoch_rsi : Stochastic RSI data is insufficient.")
@@ -509,48 +509,47 @@ def buying_logic():
 
 def additional_buy_logic():
     while True:
-        balances = upbit.get_balances()  # 잔고 조회
+        balances = upbit.get_balances()
+        krw = get_balance("KRW")
+        buy_size = min(1_000_000, krw*0.9995)
+        
         for b in balances:
             if b['currency'] not in ["KRW", "QI", "ONX", "ETHF", "ETHW", "PURSE"]:  # 특정 통화 제외
                 ticker = f"KRW-{b['currency']}"  # 현재가 조회를 위한 티커 설정
                 current_price = pyupbit.get_current_price(ticker)  # 현재가 조회
-                
+            
                 df_5 = pyupbit.get_ohlcv(ticker, interval="minute5", count=3)
                 time.sleep(0.1)
-                if df_5 is None or df_5.empty:
-                    continue
-            
                 df_5_close = df_5['close'].iloc[-3:].tolist()  # 15분 봉 종가 리스트
-                # print(f'{t} df_15_close[0]: {df_15_close[0]:,.2f} / df_15_close[1]: {df_15_close[1]:,.2f} / df_15_close[2]: {df_15_close[2]:,.2f}')
-                df_5_open = df_5['open'].iloc[-3:].tolist()  # 15분 봉 시가 리스트
 
                 bands_df = get_bollinger_bands(ticker, interval="minute5")
-                Low_Bol = bands_df['Lower_Band'].iloc[-4:].tolist()  # 볼린저 밴드 하단가 리스트
+                Low_Bol = bands_df['Lower_Band'].iloc[-3:].tolist()  # 볼린저 밴드 하단가 리스트
+                upper_band = bands_df['Upper_Band'].values
+                lower_band = bands_df['Lower_Band'].values
+                
+                band_diff = upper_band - lower_band
 
+                is_increasing = all(band_diff[i] < band_diff[i + 1] for i in range(len(band_diff) - 1))
+                
                 avg_buy_price = upbit.get_avg_buy_price(b['currency'])  # 평균 매수 가격 조회
                 profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
                 
                 stoch_rsi_5min = stoch_rsi(ticker, interval="minute5")   #스토캐스틱 RSI 계산
                 srsi_k_1 = stoch_rsi_5min['%K'].iloc[-1]
-                # srsi_k_2 = stoch_rsi_5min['%K'].iloc[-2]
-
-                if profit_rate < -4 and any(Low_Bol[i] >= df_5_close[i] for i in range(3)) and all(df_5_open[i] > df_5_close[i] for i in range(3)):
-                    if df_5_close[2] < current_price < Low_Bol[2] * 1.005 or current_price < Low_Bol[2]*0.99:
+        
+                if profit_rate < -4 and is_increasing and any(Low_Bol[i] >= df_5_close[i] for i in range(3)) :
+                    if (df_5_close[2] < current_price < Low_Bol[2] * 1.005) or (current_price < Low_Bol[2]*0.99) :
                         if srsi_k_1 < 0.4:
-                            krw = get_balance("KRW")
-                            # print(f'매수 조건 만족: {ticker} / 현재가: {current_price:,.0f} / 볼린저 밴드 하단: {low_band}')
-                            buy_size = min(1_000_000, krw*0.9995)  # 추가 매수할 금액 설정
                             result = upbit.buy_market_order(ticker, buy_size)  # 추가 매수 실행
 
-                            # 매수 결과 메시지 전송
                             if result:
                                 send_discord_message(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.0f} / 볼린저: {Low_Bol[2]:,.2f} / sRSI_5min: {srsi_k_1:,.2f}")
                                 print(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.0f} / 볼린저: {Low_Bol[2]:,.2f} / sRSI_5min: {srsi_k_1:,.2f}")
 
-                else:
-                    print(f'조건 미충족: {ticker} / 현재가: {current_price:,.0f} / 수익률 : {profit_rate:,.1f}')
+                            else:
+                                print(f'조건 미충족: {ticker} / 현재가: {current_price:,.0f} / 수익률 : {profit_rate:,.1f}')
+            
         time.sleep(150)
-
 
 # 매도 쓰레드 생성
 selling_thread = threading.Thread(target=selling_logic)
