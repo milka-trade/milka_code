@@ -121,8 +121,8 @@ def filtered_tickers(tickers, held_coins):
             
             day_open_price_1 = df_day['open'].tail(1).iloc[0]  # 당일 시가
 
-            df_15 = pyupbit.get_ohlcv(t, interval="minute15", count=3)
-            time.sleep(0.1)
+            # df_15 = pyupbit.get_ohlcv(t, interval="minute15", count=3)
+            # time.sleep(0.1)
             # if df_15 is None or df_15.empty:
             #     continue
             
@@ -158,25 +158,25 @@ def filtered_tickers(tickers, held_coins):
 
             cur_price = pyupbit.get_current_price(t)
 
-            if cur_price < day_open_price_1*1.05 :
+            # if cur_price < day_open_price_1*1.05 :
                 # print(f'[cond 1] {t} 현가 : {cur_price:,.2f} < 시가*5% : {day_open_price_1*1.05:,.2f}')
                                    
                 # if Low_Bol_15min[2] * 1.02 < up_Bol_15min :
                 #     print(f'[cond 2] {t} low_bol*2% : {Low_Bol_15min[2]*1.02:,.2f} < up_bol : {up_Bol_15min:,.2f}')
 
-                if any(Low_Bol_5min[i] >= df_5_close[i] for i in range(3)) : 
-                    print(f'[cond 3-1] {t} 볼린저 5분봉 하단 터치')
+            if is_increasing:
+                print(f'[cond 3-1] {t} 볼린저 폭 확대: {band_diff[0]:,.1f} < {band_diff[1]:,.1f} < {band_diff[2]:,.1f} < {band_diff[3]:,.1f}')
                     
-                    if is_increasing:
-                        print(f'[cond 3-2] {t} 볼린저 폭 확대: {band_diff[0]:,.1f} < {band_diff[1]:,.1f} < {band_diff[2]:,.1f} < {band_diff[3]:,.1f}')
-                        
-                        if all(df_5_open[i] > df_5_close[i] for i in range(3)):
-                            print(f'[cond 3-3] {t} 3연속 음봉 / 시가: {df_5_open[2]:,.2f} > 종가: {df_5_close[2]:,.2f}')
-                        
-                            if df_5_close[2] < cur_price < Low_Bol_5min[2] * 1.005 or cur_price < Low_Bol_5min[2]*0.99:
-                                print(f'[cond 4] {t}  종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} / Low_Bol_5min: {Low_Bol_5min[2]:,.2f}')
-                                send_discord_message(f'[cond 4] {t}  종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} / Low_Bol_5min: {Low_Bol_5min[2]:,.2f}')
-                                filtered_tickers.append(t)
+                if any(Low_Bol_5min[i] >= df_5_close[i] for i in range(3)) : 
+                    print(f'[cond 3-2] {t} 볼린저 5분봉 하단 터치')                
+                    
+                    # if all(df_5_open[i] > df_5_close[i] for i in range(3)):
+                    #     print(f'[cond 3-3] {t} 3연속 음봉 / 시가: {df_5_open[2]:,.2f} > 종가: {df_5_close[2]:,.2f}')
+                    
+                    if df_5_close[2] < cur_price < Low_Bol_5min[2] * 1.005 or cur_price < Low_Bol_5min[2]*0.99:
+                        print(f'[cond 4] {t}  종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} / Low_Bol_5min: {Low_Bol_5min[2]:,.2f}')
+                        send_discord_message(f'[cond 4] {t}  종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} / Low_Bol_5min: {Low_Bol_5min[2]:,.2f}')
+                        filtered_tickers.append(t)
 
         except Exception as e:
             send_discord_message(f"filtered_tickers/Error processing ticker {t}: {e}")
@@ -227,11 +227,13 @@ def get_best_ticker():
             if ticker not in excluded_tickers:
                 df = pyupbit.get_ohlcv(ticker, interval="day", count=1)
                 time.sleep(0.1)
+                cur_price = pyupbit.get_current_price(ticker)
                 
                 day_value = df['value'].tail(1).iloc[0]  # 해당 코인의 당일 거래량
-                if day_value >= krw_sol_day_value:  # SOL의 거래량보다 높은 경우
+                day_price = df['open'].tail(1).iloc[0]  # 당일 시가
+                if day_value >= krw_sol_day_value and cur_price < day_price * 1.05:  # SOL의 거래량보다 높은 경우
                     selected_tickers.append(ticker)
-                    print(f"[{selected_tickers}]")
+                    # print(f"[{selected_tickers}]")
             
         # tickers = pyupbit.get_tickers(fiat="KRW")  # 거래 가능한 모든 코인 조회
         # tickers = [ticker for ticker in selected_tickers if ticker in pyupbit.get_tickers(fiat="KRW")]  # 지정된 코인만 조회
