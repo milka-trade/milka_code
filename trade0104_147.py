@@ -217,9 +217,9 @@ def filtered_tickers(tickers, held_coins):
                         if all(df_5_open[i] > df_5_close[i] for i in range(3)):
                             print(f'[cond 3-2] {t} 3연속 음봉: 시가: {df_5_open[2]:,.2f} > 종가: {df_15_close[2]:,.2f}')
                         
-                            if df_5_close[2] < cur_price < Low_Bol_5min[2] * 1.01:
-                                print(f'[cond 4] {t}  종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} < Low_Bol_5min*1% : {Low_Bol_5min[2]*1.01:,.2f}')
-                                send_discord_message(f'[cond 4] {t}  종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} < Low_Bol_5min*1% : {Low_Bol_5min[2]*1.01:,.2f}')
+                            if df_5_close[2] < cur_price < Low_Bol_5min[2] * 1.01 or cur_price < Low_Bol_5min[2]*0.99:
+                                print(f'[cond 4] {t}  종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} < Low_Bol_5min: {Low_Bol_5min[2]:,.2f}')
+                                send_discord_message(f'[cond 4] {t}  종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} < Low_Bol_5min: {Low_Bol_5min[2]:,.2f}')
                                 filtered_tickers.append(t)
 
         except Exception as e:
