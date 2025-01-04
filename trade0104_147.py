@@ -149,7 +149,7 @@ def get_bollinger_bands(ticker, interval="minute15", window=20, std_dev=2):
 def filtered_tickers(tickers, held_coins):
     """특정 조건에 맞는 티커 필터링"""
     filtered_tickers = []
-    threshold_value = get_dynamic_threshold(tickers)
+    # threshold_value = get_dynamic_threshold(tickers)
 
     # 'KRW-SOL'의 거래량을 가져옵니다.
     # df_sol = pyupbit.get_ohlcv('KRW-SOL', interval="day", count=1)
@@ -198,7 +198,7 @@ def filtered_tickers(tickers, held_coins):
             # up_Bol_15min = bands_df['Upper_Band'].iloc[-1]
             # print(f'{t} Low_Bol[0]: {Low_Bol[0]:,.2f} / Low_Bol[1]: {Low_Bol[1]:,.2f} / Low_Bol[2]: {Low_Bol[2]:,.2f}')
 
-            atr = get_atr(t, 14)
+            # atr = get_atr(t, 14)
             cur_price = pyupbit.get_current_price(t)
 
             if cur_price < day_open_price_1*1.05 :
