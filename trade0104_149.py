@@ -145,12 +145,9 @@ def filtered_tickers(tickers, held_coins):
                 if any(lower_band[i] >= df_5_close[i] for i in range(len(lower_band))) : 
                     print(f'[cond 3-2] {t} 볼린저 5분봉 하단 터치')                
                     
-                    if (df_5_close[2] < cur_price < lower_band[2] * 1.005) :
-                        print(f'[cond 4] {t} 종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} < LowBand: {lower_band[2] * 1.005:,.2f}')
-                        send_discord_message(f'[cond 4] {t} 종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} < LowBand: {lower_band[2] * 1.005:,.2f}')
-                    if cur_price < lower_band[2]*0.99 :
-                        print(f'[cond 4] {t}  현재가: {cur_price:,.2f} / Low_Bol_5min * 0.99: {lower_band[2] * 0.99:,.2f}')
-                        send_discord_message(f'[cond 4] {t}  현재가: {cur_price:,.2f} / Low_Bol_5min * 0.99: {lower_band[2] * 0.99:,.2f}')
+                    if (df_5_close[2] < cur_price < lower_band[2] * 1.005) or (cur_price < lower_band[2]*0.99):
+                        print(f'[cond 4] {t} 종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} < LowBand * 1.005: {lower_band[2] * 1.005:,.2f} \n or 현재가: {cur_price:,.2f} < LowBand * 0.99: {lower_band[2] * 0.99:,.2f}')
+                        send_discord_message(f'[cond 4] {t} 종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} < LowBand * 1.005: {lower_band[2] * 1.005:,.2f} \n or 현재가: {cur_price:,.2f} < LowBand * 0.99: {lower_band[2] * 0.99:,.2f}')
                         filtered_tickers.append(t)
 
         except Exception as e:
