@@ -21,7 +21,7 @@ count_20 = 20
 
 minute1 = "minute1"
 minute5 = "minute5"
-minute15 = "minute15"
+# minute15 = "minute15"
 
 second60=60
 second1=1
@@ -151,6 +151,7 @@ def filtered_tickers(tickers):
                     
                 if lower_boliinger : 
                     print(f'[cond 3-2] {t} low1: {lower_band[1]:,.2f} >= 종가1: {df_5_close[1]:,.2f} \n low2: {lower_band[2]:,.2f} >= 종가2: {df_5_close[2]:,.2f} low3: {lower_band[3]:,.2f} >= 종가3: {df_5_close[3]:,.2f}')
+                    send_discord_message(f'[cond 3-2] {t} low1: {lower_band[1]:,.2f} >= 종가1: {df_5_close[1]:,.2f} \n low2: {lower_band[2]:,.2f} >= 종가2: {df_5_close[2]:,.2f} low3: {lower_band[3]:,.2f} >= 종가3: {df_5_close[3]:,.2f}')
                     
                     if low_price:
                         print(f'[cond 4] {t} 종가: {df_5_close[len(lower_band)-1]:,.2f} < 현재가: {cur_price:,.2f} < LowBand * 1.005: {lower_band[len(lower_band)-1] * 1.005:,.2f} \n or 현재가: {cur_price:,.2f} < LowBand * 0.99: {lower_band[len(lower_band)-1] * 0.99:,.2f}')
