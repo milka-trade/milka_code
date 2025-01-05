@@ -153,8 +153,8 @@ def filtered_tickers(tickers):
                 # print(f'[cond 1] {t} 볼린저 폭 확대: {lower_band[0]:,.1f} > {lower_band[1]:,.1f} > {lower_band[2]:,.1f}')
                     
                 if lower_boliinger and 0 < srsi_k[1] < srsi_k[2] < 0.3 : 
-                    print(f'[cond 2] {t} lower_boliinger: {lower_boliinger} >= 2 / 0 < srsi1: {srsi_k[1]} < srsk2: {srsi_k[2]} < 0.3')
-                    send_discord_message(f'[cond 2] {t} lower_boliinger: {lower_boliinger} >= 2 / 0 < srsi1: {srsi_k[1]} < srsk2: {srsi_k[2]} < 0.3')
+                    print(f'[cond 2] {t} lower_boliinger: {lower_boliinger} >= 2 / 0 < srsi1: {srsi_k[1]:,.2f} < srsk2: {srsi_k[2]:.2f} < 0.3')
+                    send_discord_message(f'[cond 2] {t} lower_boliinger: {lower_boliinger} >= 2 / 0 < srsi1: {srsi_k[1],.2f} < srsk2: {srsi_k[2]:,.2f} < 0.3')
                     filtered_tickers.append(t)
 
         except (KeyError, ValueError) as e:
@@ -342,15 +342,15 @@ def trade_sell(ticker):
     if sell_start <= selltime <= sell_end:      # 매도 제한시간이면
         if profit_rate >= 0.5 and up_Bol[len(up_Bol)-1] * 0.99 <= current_price :
             sell_order = upbit.sell_market_order(ticker, buyed_amount)
-            print(f"[장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {up_Bol[len(up_Bol)-1] * 0.99:,.2f}")
-            send_discord_message(f"[장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {up_Bol[len(up_Bol)-1] * 0.99:,.2f}")
+            print(f"[장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.1f}% / {current_price:,.2f} < upperBand_99%: {up_Bol[len(up_Bol)-1] * 0.99:,.2f}")
+            send_discord_message(f"[장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.1f}% / {current_price:,.2f} < upperBand_99%: {up_Bol[len(up_Bol)-1] * 0.99:,.2f}")
                            
     else:
         if profit_rate >= 0.6:
             while attempts < max_attempts:
                 current_price = pyupbit.get_current_price(ticker)  # 현재 가격 재조회
                 profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
-                print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 수익률: {profit_rate:.2f}%") 
+                print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 수익률: {profit_rate:.1f}%") 
                     
                 if profit_rate >= 3 and current_price > up_Bol[len(up_Bol)-1] * 1.01 :
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
@@ -359,7 +359,7 @@ def trade_sell(ticker):
                     return sell_order
 
                 else:
-                    time.sleep(second05)  # 짧은 대기                                                                                                                                                    
+                    time.sleep(second05)                                                                                                                            
                 attempts += 1  # 조회 횟수 증가
                 
             if profit_rate >= 0.7 and df_high[0] > up_Bol[len(up_Bol)-1] * 0.995 and srsi_k_1[2] > 0.9:
