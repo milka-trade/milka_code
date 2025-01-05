@@ -53,7 +53,7 @@ def get_balance(ticker):
     return 0
 
 def get_ema(ticker, window):
-    df = pyupbit.get_ohlcv(ticker, interval=minute15, count=count_200)
+    df = pyupbit.get_ohlcv(ticker, interval=minute5, count=count_200)
     time.sleep(second05)
 
     if df is not None and not df.empty:
@@ -115,7 +115,7 @@ def get_bollinger_bands(ticker, interval=minute5, window=20, std_dev=2):
         'Lower_Band': lower_band
     })
 
-    return bands_df.tail(3)  # 최근 4개의 밴드 값
+    return bands_df.tail(4)  # 최근 4개의 밴드 값
 
 def filtered_tickers(tickers):
     """특정 조건에 맞는 티커 필터링"""
@@ -126,28 +126,31 @@ def filtered_tickers(tickers):
         # if currency in held_coins:        # 보유한 코인 제외
         #     continue
         try:
+            cur_price = pyupbit.get_current_price(t)
             
-            df_5 = pyupbit.get_ohlcv(t, interval=minute5, count=3)
+            df_5 = pyupbit.get_ohlcv(t, interval=minute5, count=4)
             time.sleep(second05)            
             df_5_close = df_5['close'].values
 
             bands_df = get_bollinger_bands(t, interval=minute5)
             lower_band = bands_df['Lower_Band'].values
-            cur_price = pyupbit.get_current_price(t)
+            upper_band = bands_df['Upper_Band'].values
+            band_diff = upper_band - lower_band
 
-            is_increasing = all(lower_band[i] > lower_band[i + 1] for i in range(len(lower_band) - 1))
-            lower_boliinger = any(lower_band[i] >= df_5_close[i] for i in range(len(lower_band)))
-            low_price = (df_5_close[2] < cur_price < lower_band[2] * 1.005) or (cur_price < lower_band[2]*0.99)
+            # is_increasing = all(lower_band[i] > lower_band[i + 1] for i in range(len(lower_band) - 1))
+            is_increasing = all(band_diff[i] < band_diff[i + 1] for i in range(len(band_diff) - 1))
+            lower_boliinger = any(lower_band[i + 1] >= df_5_close[i + 1] for i in range(len(lower_band)-1))
+            low_price = (df_5_close[len(band_diff) - 1] < cur_price < lower_band[len(band_diff) - 1] * 1.005) or (cur_price < lower_band[len(band_diff) - 1]*0.99)
 
             if is_increasing:
                 # print(f'[cond 3-1] {t} 볼린저 폭 확대: {lower_band[0]:,.1f} > {lower_band[1]:,.1f} > {lower_band[2]:,.1f}')
                     
                 if lower_boliinger : 
-                    print(f'[cond 3-2] {t} low0: {lower_band[0]:,.2f} >= 종가0: {df_5_close[0]:,.2f} \n low1: {lower_band[1]:,.2f} >= 종가1: {df_5_close[1]:,.2f} low2: {lower_band[2]:,.2f} >= 종가2: {df_5_close[2]:,.2f}')
+                    print(f'[cond 3-2] {t} low1: {lower_band[1]:,.2f} >= 종가1: {df_5_close[1]:,.2f} \n low2: {lower_band[2]:,.2f} >= 종가2: {df_5_close[2]:,.2f} low3: {lower_band[3]:,.2f} >= 종가3: {df_5_close[3]:,.2f}')
                     
                     if low_price:
-                        print(f'[cond 4] {t} 종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} < LowBand * 1.005: {lower_band[2] * 1.005:,.2f} \n or 현재가: {cur_price:,.2f} < LowBand * 0.99: {lower_band[2] * 0.99:,.2f}')
-                        send_discord_message(f'[cond 4] {t} 종가: {df_5_close[2]:,.2f} < 현재가: {cur_price:,.2f} < LowBand * 1.005: {lower_band[2] * 1.005:,.2f} \n or 현재가: {cur_price:,.2f} < LowBand * 0.99: {lower_band[2] * 0.99:,.2f}')
+                        print(f'[cond 4] {t} 종가: {df_5_close[len(lower_band)-1]:,.2f} < 현재가: {cur_price:,.2f} < LowBand * 1.005: {lower_band[len(lower_band)-1] * 1.005:,.2f} \n or 현재가: {cur_price:,.2f} < LowBand * 0.99: {lower_band[len(lower_band)-1] * 0.99:,.2f}')
+                        send_discord_message(f'[cond 4] {t} 종가: {df_5_close[len(lower_band)-1]:,.2f} < 현재가: {cur_price:,.2f} < LowBand * 1.005: {lower_band[len(lower_band)-1] * 1.005:,.2f} \n or 현재가: {cur_price:,.2f} < LowBand * 0.99: {lower_band[len(lower_band)-1] * 0.99:,.2f}')
                         filtered_tickers.append(t)
 
         except (KeyError, ValueError) as e:
@@ -310,14 +313,14 @@ def trade_sell(ticker):
     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
     last_ema20 = get_ema(ticker, 20)
     
-    df_15 = pyupbit.get_ohlcv(ticker, interval=minute15, count=1)
+    df_15 = pyupbit.get_ohlcv(ticker, interval=minute5, count=1)
     time.sleep(second05)
     df_15_high = df_15['high'].values
     
-    stoch_rsi_15min = stoch_rsi(ticker, interval=minute15)   #스토캐스틱 RSI 계산
-    srsi_k_1 = stoch_rsi_15min['%K'].values
+    stoch_Rsi = stoch_rsi(ticker, interval=minute5)   #스토캐스틱 RSI 계산
+    srsi_k_1 = stoch_Rsi['%K'].values
     
-    bands_df = get_bollinger_bands(ticker, interval=minute15)
+    bands_df = get_bollinger_bands(ticker, interval=minute5)
     up_Bol = bands_df['Upper_Band'].values
 
     selltime = datetime.now()
@@ -328,10 +331,10 @@ def trade_sell(ticker):
     attempts = 0  # 현재 조회 횟수
     
     if sell_start <= selltime <= sell_end:      # 매도 제한시간이면
-        if profit_rate >= 0.5 and up_Bol[2] * 0.99 <= current_price :
+        if profit_rate >= 0.5 and up_Bol[len(up_Bol)-1] * 0.99 <= current_price :
             sell_order = upbit.sell_market_order(ticker, buyed_amount)
-            print(f"[장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {up_Bol[2] * 0.99:,.2f}")
-            send_discord_message(f"[장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {up_Bol[2] * 0.99:,.2f}")
+            print(f"[장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {up_Bol[len(up_Bol)-1] * 0.99:,.2f}")
+            send_discord_message(f"[장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.2f}% / {current_price:,.2f} < upperBand_99%: {up_Bol[len(up_Bol)-1] * 0.99:,.2f}")
                            
     else:
         if profit_rate >= 0.6:
@@ -340,7 +343,7 @@ def trade_sell(ticker):
                 profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
                 print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 수익률: {profit_rate:.2f}%") 
                     
-                if profit_rate >= 2 and current_price > up_Bol[2] * 1.005 :
+                if profit_rate >= 2 and current_price > up_Bol[len(up_Bol)-1] * 1.005 :
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
                     print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
                     send_discord_message(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
@@ -350,7 +353,7 @@ def trade_sell(ticker):
                     time.sleep(second05)  # 짧은 대기                                                                                                                                                    
                 attempts += 1  # 조회 횟수 증가
                 
-            if profit_rate >= 0.6 and df_15_high > up_Bol[2]*0.995 and srsi_k_1[2] > 0.9:
+            if profit_rate >= 0.6 and df_15_high > up_Bol[len(up_Bol)-1]*0.99 and srsi_k_1[2] > 0.9:
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
                 send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} srsi: {srsi_k_1[2]:,.2f} > 0.9")
                 print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} srsi: {srsi_k_1[2]:,.2f} > 0.9")
@@ -379,12 +382,12 @@ def send_profit_report():
                 avg_buy_price = float(b['avg_buy_price'])
                 current_price = pyupbit.get_current_price(ticker)
                 
-                s_rsi = stoch_rsi(ticker, interval=minute15)
+                s_rsi = stoch_rsi(ticker, interval=minute5)
                 sRSI_K = s_rsi['%K'].values
 
                 if buyed_amount > 0:
                     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
-                    report_message += f"[{b['currency']}] 수익률:{profit_rate:.1f}% s_RSI_K_15:{sRSI_K[2]:.2f}\n"
+                    report_message += f"[{b['currency']}] 수익률:{profit_rate:.1f}% s_RSI_K:{sRSI_K[2]:.2f}\n"
 
             send_discord_message(report_message)
 
@@ -472,26 +475,30 @@ def additional_buy_logic():
                 avg_buy_price = upbit.get_avg_buy_price(b['currency']) 
                 profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0 
             
-                df_5 = pyupbit.get_ohlcv(ticker, interval=minute5, count=3)
+                df = pyupbit.get_ohlcv(ticker, interval=minute5, count=4)
                 time.sleep(second05)
-                df_5_close = df_5['close'].values
+                df_close = df['close'].values
 
-                bands_df = get_bollinger_bands(ticker, interval=minute15)
+                bands_df = get_bollinger_bands(ticker, interval=minute5)
                 lower_band = bands_df['Lower_Band'].values
-                is_increasing = all(lower_band[i] < lower_band[i + 1] for i in range(len(lower_band) - 1))
-                low_bollenger = any(lower_band[i] >= df_5_close[i] for i in range(len(lower_band)))
-                low_price = (df_5_close[2] < current_price < lower_band[2] * 1.005) or (current_price < lower_band[2]*0.99)
+                upper_band = bands_df['Upper_Band'].values
+                band_diff = upper_band - lower_band
+                
+                # is_increasing = all(lower_band[i] < lower_band[i + 1] for i in range(len(lower_band) - 1))
+                is_increasing = all(band_diff[i] < band_diff[i + 1] for i in range(len(band_diff) - 1))
+                low_bollenger = any(lower_band[i + 1] >= df_close[i + 1] for i in range(len(band_diff) - 1))
+                low_price = (df_close[len(band_diff) - 1] < current_price < lower_band[len(band_diff) - 1] * 1.005) or (current_price < lower_band[len(band_diff) - 1]*0.99)
                                 
-                stoch_rsi_5min = stoch_rsi(ticker, interval=minute5)
-                srsi_k = stoch_rsi_5min['%K'].values
+                stoch_Rsi = stoch_rsi(ticker, interval=minute5)
+                srsi_k = stoch_Rsi['%K'].values
         
-                if profit_rate < -4 and is_increasing and low_bollenger :   #-4% 미만, 조건1, 조건1
+                if profit_rate < -2 and is_increasing and low_bollenger :   #-2% 미만, 조건1, 조건1
                     if low_price and srsi_k[2] < 0.4 :                      #조건3, sRSI 0.4미만
                         result = upbit.buy_market_order(ticker, buy_size)  # 추가 매수 실행
 
                         if result:
-                            send_discord_message(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.0f} / 볼린저: {lower_band[2]:,.2f} / sRSI_5min: {srsi_k[2]:,.2f}")
-                            print(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.0f} / 볼린저: {lower_band[2]:,.2f} / sRSI_5min: {srsi_k[2]:,.2f}")
+                            send_discord_message(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.0f} / 볼린저: {lower_band[2]:,.2f} / sRSI: {srsi_k[2]:,.2f}")
+                            print(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.0f} / 볼린저: {lower_band[2]:,.2f} / sRSI: {srsi_k[2]:,.2f}")
 
                     else:
                         print(f'조건 미충족: {ticker} / 현재가: {current_price:,.0f} / 수익률 : {profit_rate:,.1f}')
