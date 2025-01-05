@@ -336,7 +336,7 @@ def trade_sell(ticker):
     sell_start = selltime.replace(hour=8, minute=50 , second=00, microsecond=0)
     sell_end = selltime.replace(hour=8, minute=59, second=50, microsecond=0)
 
-    max_attempts = 10  # 최대 조회 횟수
+    max_attempts = 20  # 최대 조회 횟수
     attempts = 0  # 현재 조회 횟수
     
     if sell_start <= selltime <= sell_end:      # 매도 제한시간이면
@@ -352,7 +352,7 @@ def trade_sell(ticker):
                 profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
                 print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 수익률: {profit_rate:.2f}%") 
                     
-                if profit_rate >= 2 and current_price > up_Bol[len(up_Bol)-1] * 1.005 :
+                if profit_rate >= 3 and current_price > up_Bol[len(up_Bol)-1] * 1.01 :
                     sell_order = upbit.sell_market_order(ticker, buyed_amount)
                     print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
                     send_discord_message(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f} / 현재가: {current_price:,.2f} / 시도 {attempts + 1} / {max_attempts}")
@@ -362,7 +362,7 @@ def trade_sell(ticker):
                     time.sleep(second05)  # 짧은 대기                                                                                                                                                    
                 attempts += 1  # 조회 횟수 증가
                 
-            if profit_rate >= 0.6 and df_high[0] > up_Bol[len(up_Bol)-1] * 0.995 and srsi_k_1[2] > 0.9:
+            if profit_rate >= 0.7 and df_high[0] > up_Bol[len(up_Bol)-1] * 0.995 and srsi_k_1[2] > 0.9:
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
                 send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} \n 고가: {df_high[0]:,.2f} > 볼밴상단: {up_Bol[len(up_Bol)-1]*0.995} srsi: {srsi_k_1[2]:,.2f} > 0.9")
                 print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% 현재가: {current_price:,.2f} \n 고가: {df_high[0]:,.2f} > 볼밴상단: {up_Bol[len(up_Bol)-1]*0.995} srsi: {srsi_k_1[2]:,.2f} > 0.9")
