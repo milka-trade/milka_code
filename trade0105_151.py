@@ -140,7 +140,7 @@ def filtered_tickers(tickers):
             low_price = (df_5_close[2] < cur_price < lower_band[2] * 1.005) or (cur_price < lower_band[2]*0.99)
 
             if is_increasing:
-                print(f'[cond 3-1] {t} 볼린저 폭 확대: {lower_band[0]:,.1f} > {lower_band[1]:,.1f} > {lower_band[2]:,.1f}')
+                # print(f'[cond 3-1] {t} 볼린저 폭 확대: {lower_band[0]:,.1f} > {lower_band[1]:,.1f} > {lower_band[2]:,.1f}')
                     
                 if lower_boliinger : 
                     print(f'[cond 3-2] {t} low0: {lower_band[0]:,.2f} >= 종가0: {df_5_close[0]:,.2f} \n low1: {lower_band[1]:,.2f} >= 종가1: {df_5_close[1]:,.2f} low2: {lower_band[2]:,.2f} >= 종가2: {df_5_close[2]:,.2f}')
@@ -199,7 +199,7 @@ def get_best_ticker():
         sol_value = df_sol['value'].values  # KRW-SOL의 당일 거래량
         
         all_tickers = pyupbit.get_tickers(fiat="KRW")
-        filtered_tickers = []
+        filtering_tickers = []
         
         for ticker in all_tickers:
             if ticker not in excluded_tickers and ticker not in held_coins:
@@ -210,11 +210,10 @@ def get_best_ticker():
 
                 cur_price = pyupbit.get_current_price(ticker)
 
-                # if (ticker in selected_tickers) or (day_value[0] > sol_value[0] * 2):
                 if ticker in selected_tickers or day_value[0] > sol_value[0]*2 :
                     if cur_price < day_price[0] * 1.05:  
-                        print(f'{ticker} 일 거래량: {day_value[0]:,.0f} >= SOL 거래량: {sol_value[0]:,.0f}')
-                        filtered_tickers.append(ticker)
+                        # print(f'{ticker} 일 거래량: {day_value[0]:,.0f} >= SOL 거래량: {sol_value[0]:,.0f}')
+                        filtering_tickers.append(ticker)
 
     except (KeyError, ValueError) as e:
         send_discord_message(f"get_best_ticker/티커 조회 중 오류 발생: {e}")
@@ -223,7 +222,7 @@ def get_best_ticker():
         return None, None, None
 
     filtered_time = datetime.now().strftime('%m/%d %H:%M:%S')  # 시작시간 기록
-    filtered_list = filtered_tickers(filtered_tickers)
+    filtered_list = filtered_tickers(filtering_tickers)
     
     send_discord_message(f"{filtered_time} [{filtered_list}]")
     print(f"[{filtered_list}]")
