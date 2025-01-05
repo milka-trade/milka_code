@@ -152,9 +152,9 @@ def filtered_tickers(tickers):
             if is_increasing:
                 # print(f'[cond 1] {t} 볼린저 폭 확대: {lower_band[0]:,.1f} > {lower_band[1]:,.1f} > {lower_band[2]:,.1f}')
                     
-                if lower_boliinger and 0 < srsi_k[1] < srsi_k[2] < 0.4 : 
-                    print(f'[cond 2] {t} lower_boliinger: {lower_boliinger} >= 2 / 0 < srsi1: {srsi_k[1]} < srsk2: {srsi_k[2]} < 0.4')
-                    send_discord_message(f'[cond 2] {t} lower_boliinger: {lower_boliinger} >= 2 / 0 < srsi1: {srsi_k[1]} < srsk2: {srsi_k[2]} < 0.4')
+                if lower_boliinger and 0 < srsi_k[1] < srsi_k[2] < 0.3 : 
+                    print(f'[cond 2] {t} lower_boliinger: {lower_boliinger} >= 2 / 0 < srsi1: {srsi_k[1]} < srsk2: {srsi_k[2]} < 0.3')
+                    send_discord_message(f'[cond 2] {t} lower_boliinger: {lower_boliinger} >= 2 / 0 < srsi1: {srsi_k[1]} < srsk2: {srsi_k[2]} < 0.3')
                     filtered_tickers.append(t)
 
         except (KeyError, ValueError) as e:
@@ -508,12 +508,12 @@ def additional_buy_logic():
                 srsi_k = stoch_Rsi['%K'].values
         
                 if profit_rate < -2 and is_increasing and lower_boliinger :   #-2% 미만, 조건1, 조건1
-                    if low_price and srsi_k[2] < 0.4 :                      #조건3, sRSI 0.4미만
+                    if low_price and srsi_k[2] < 0.3 :                      #조건3, sRSI 0.4미만
                         result = upbit.buy_market_order(ticker, buy_size)  # 추가 매수 실행
 
                         if result:
-                            send_discord_message(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.0f} / lower_boliinger: {lower_boliinger} >= 2 / 0 < srsi1: {srsi_k[1]} < srsk2: {srsi_k[2]} < 0.4")
-                            print(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.0f} / lower_boliinger: {lower_boliinger} >= 2 / 0 < srsi1: {srsi_k[1]} < srsk2: {srsi_k[2]} < 0.4")
+                            send_discord_message(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.0f} / lower_boliinger: {lower_boliinger} >= 2 / 0 < srsi1: {srsi_k[1]} < srsk2: {srsi_k[2]} < 0.3")
+                            print(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.0f} / lower_boliinger: {lower_boliinger} >= 2 / 0 < srsi1: {srsi_k[1]} < srsk2: {srsi_k[2]} < 0.3")
 
                     else:
                         print(f'조건 미충족: {ticker} / 수익률 : {profit_rate:,.1f}')
