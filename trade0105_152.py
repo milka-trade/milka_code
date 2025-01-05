@@ -134,12 +134,16 @@ def filtered_tickers(tickers):
             upper_band = bands_df['Upper_Band'].values
             band_diff = upper_band - lower_band
 
+            stoch_Rsi = stoch_rsi(t, interval=minute5)   #스토캐스틱 RSI 계산
+            srsi_k_1 = stoch_Rsi['%K'].values
+    
             # is_increasing = all(lower_band[i] > lower_band[i + 1] for i in range(len(lower_band) - 1))
             is_increasing = all(band_diff[i] < band_diff[i + 1] for i in range(len(band_diff) - 1))
             # lower_boliinger = any(lower_band[i + 1] >= df_5_close[i + 1] for i in range(len(lower_band)-1))
             
             # 볼린저 밴드의 하단값과 종가를 비교하여, 종가가 하단값 이하인 경우의 수를 센다
             count_below_lower_band = sum(1 for i in range(len(lower_band)) if df_5_close[i] < lower_band[i])
+            # print(f'{t} {count_below_lower_band}')
             
             # 종가가 볼린저 밴드의 하단값 이하인 경우가 2번 이상 발생하는지 확인
             lower_boliinger = count_below_lower_band >= 2
@@ -147,15 +151,15 @@ def filtered_tickers(tickers):
             low_price = (df_5_close[len(band_diff) - 1] < cur_price < lower_band[len(band_diff) - 1] * 1.005) or (cur_price < lower_band[len(band_diff) - 1]*0.99)
 
             if is_increasing:
-                # print(f'[cond 3-1] {t} 볼린저 폭 확대: {lower_band[0]:,.1f} > {lower_band[1]:,.1f} > {lower_band[2]:,.1f}')
+                # print(f'[cond 1] {t} 볼린저 폭 확대: {lower_band[0]:,.1f} > {lower_band[1]:,.1f} > {lower_band[2]:,.1f}')
                     
                 if lower_boliinger : 
-                    print(f'[cond 3-2] {t} low1: {lower_band[1]:,.2f} >= 종가1: {df_5_close[1]:,.2f} \n low2: {lower_band[2]:,.2f} >= 종가2: {df_5_close[2]:,.2f} low3: {lower_band[3]:,.2f} >= 종가3: {df_5_close[3]:,.2f}')
-                    send_discord_message(f'[cond 3-2] {t} low1: {lower_band[1]:,.2f} >= 종가1: {df_5_close[1]:,.2f} \n low2: {lower_band[2]:,.2f} >= 종가2: {df_5_close[2]:,.2f} low3: {lower_band[3]:,.2f} >= 종가3: {df_5_close[3]:,.2f}')
+                    print(f'[cond 2] {t} lower_boliinger: {lower_boliinger} >= 2')
+                    send_discord_message(f'[cond 2] {t} lower_boliinger: {lower_boliinger} >= 2')
                     
                     if low_price:
-                        print(f'[cond 4] {t} 종가: {df_5_close[len(lower_band)-1]:,.2f} < 현재가: {cur_price:,.2f} < LowBand * 1.005: {lower_band[len(lower_band)-1] * 1.005:,.2f} \n or 현재가: {cur_price:,.2f} < LowBand * 0.99: {lower_band[len(lower_band)-1] * 0.99:,.2f}')
-                        send_discord_message(f'[cond 4] {t} 종가: {df_5_close[len(lower_band)-1]:,.2f} < 현재가: {cur_price:,.2f} < LowBand * 1.005: {lower_band[len(lower_band)-1] * 1.005:,.2f} \n or 현재가: {cur_price:,.2f} < LowBand * 0.99: {lower_band[len(lower_band)-1] * 0.99:,.2f}')
+                        print(f'[cond 3] {t} 종가: {df_5_close[len(lower_band)-1]:,.2f} < 현재가: {cur_price:,.2f} < LowBand * 1.005: {lower_band[len(lower_band)-1] * 1.005:,.2f} \n or 현재가: {cur_price:,.2f} < LowBand * 0.99: {lower_band[len(lower_band)-1] * 0.99:,.2f}')
+                        send_discord_message(f'[cond 3] {t} 종가: {df_5_close[len(lower_band)-1]:,.2f} < 현재가: {cur_price:,.2f} < LowBand * 1.005: {lower_band[len(lower_band)-1] * 1.005:,.2f} \n or 현재가: {cur_price:,.2f} < LowBand * 0.99: {lower_band[len(lower_band)-1] * 0.99:,.2f}')
                         filtered_tickers.append(t)
 
         except (KeyError, ValueError) as e:
@@ -220,7 +224,7 @@ def get_best_ticker():
 
                 if ticker in selected_tickers or day_value[0] > sol_value[0] * 2 :
                     if cur_price < day_price[0] * 1.05:  
-                        # print(f'{ticker} 일 거래량: {day_value[0]:,.0f} >= SOL 거래량: {sol_value[0]:,.0f}')
+                        print(f'{ticker} 일 거래량: {day_value[0]:,.0f} >= SOL 거래량: {sol_value[0]:,.0f}')
                         filtering_tickers.append(ticker)
 
     except (KeyError, ValueError) as e:
@@ -508,8 +512,8 @@ def additional_buy_logic():
                         result = upbit.buy_market_order(ticker, buy_size)  # 추가 매수 실행
 
                         if result:
-                            send_discord_message(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.0f} / 볼린저: {lower_band[2]:,.2f} / sRSI: {srsi_k[2]:,.2f}")
-                            print(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.0f} / 볼린저: {lower_band[2]:,.2f} / sRSI: {srsi_k[2]:,.2f}")
+                            send_discord_message(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.0f} / 볼린저하단횟수: {lower_boliinger} / sRSI: {srsi_k[2]:,.2f}")
+                            print(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.0f} / 볼린저하단횟수: {lower_boliinger} / sRSI: {srsi_k[2]:,.2f}")
 
                     else:
                         print(f'조건 미충족: {ticker} / 현재가: {current_price:,.0f} / 수익률 : {profit_rate:,.1f}')
