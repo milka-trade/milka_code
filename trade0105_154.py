@@ -139,9 +139,7 @@ def filtered_tickers(tickers):
             stoch_Rsi = stoch_rsi(t, interval=minute5)
             srsi_k = stoch_Rsi['%K'].values
 
-            # is_increasing = all(lower_band[i] > lower_band[i + 1] for i in range(len(lower_band) - 1))
             is_increasing = all(band_diff[i] < band_diff[i + 1] for i in range(len(band_diff) - 1))
-            # lower_boliinger = any(lower_band[i + 1] >= df_5_close[i + 1] for i in range(len(lower_band)-1))
             
             # 볼린저 밴드의 하단값과 종가를 비교하여, 종가가 하단값 이하인 경우의 수를 센다
             count_below_lower_band = sum(1 for i in range(len(lower_band)) if df_5_close[i] < lower_band[i])
@@ -149,7 +147,7 @@ def filtered_tickers(tickers):
             # 종가가 볼린저 밴드의 하단값 이하인 경우가 2번 이상 발생하는지 확인
             lower_boliinger = count_below_lower_band >= 2
             
-            low_price = (df_5_close[len(band_diff) - 1] < cur_price < lower_band[len(band_diff) - 1] * 1.005) or (cur_price < lower_band[len(band_diff) - 1]*0.99)
+            # low_price = (df_5_close[len(band_diff) - 1] < cur_price < lower_band[len(band_diff) - 1] * 1.005) or (cur_price < lower_band[len(band_diff) - 1]*0.99)
 
             if is_increasing:
                 # print(f'[cond 1] {t} 볼린저 폭 확대: {lower_band[0]:,.1f} > {lower_band[1]:,.1f} > {lower_band[2]:,.1f}')
@@ -192,15 +190,16 @@ def get_best_k(ticker):
 
 def get_best_ticker():
     selected_tickers = ["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-SOL", "KRW-ADA", "KRW-XLM", "KRW-DOGE", "KRW-HBAR"]  # 지정된 코인 리스트
-    excluded_tickers = ["KRW-QI", "KRW-ONX", "KRW-ETHF", "KRW-ETHW", "KRW-PURSE", "KRW-USDT", "KRW-BTG", "KRW-SBD", "KRW-STG", "KRW-HIVE"]  # 제외할 코인 리스트
+    excluded_tickers = ["KRW-QI", "KRW-ONX", "KRW-ETHF", "KRW-ETHW", "KRW-PURSE", "KRW-USDT", 
+                        "KRW-BTG", "KRW-SBD", "KRW-STG", "KRW-HIVE", "KRW-TOKAMAK", "KRW-AKT", "KRW-HPO" ]  # 제외할 코인 리스트
     balances = upbit.get_balances()
     held_coins = []
 
     for b in balances:
-        if b['currency'] not in ["KRW", "QI", "ONX", "ETHF", "ETHW", "PURSE"]:  # 특정 통화 제외
-            if float(b['balance']) > 0:  # 보유량이 0보다 큰 경우
-                ticker = f"KRW-{b['currency']}"  # 현재가 조회를 위한 티커 설정
-                held_coins.append(ticker)  # "KRW-코인명" 형태로 추가
+        # if b['currency'] not in ["KRW", "QI", "ONX", "ETHF", "ETHW", "PURSE"]:  # 특정 통화 제외
+        if float(b['balance']) > 0:  # 보유량이 0보다 큰 경우
+            ticker = f"KRW-{b['currency']}"  # 현재가 조회를 위한 티커 설정
+            held_coins.append(ticker)  # "KRW-코인명" 형태로 추가
     
     try:
         df_sol = pyupbit.get_ohlcv('KRW-SOL', interval="day", count=1)
