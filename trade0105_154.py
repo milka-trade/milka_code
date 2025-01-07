@@ -28,7 +28,7 @@ second1=1
 second05=0.5
 # second01=0.1
 
-trade=1_100_000
+trade=1_500_000
 
 def send_discord_message(msg):
     """discord 메시지 전송"""
