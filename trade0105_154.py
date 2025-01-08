@@ -30,6 +30,7 @@ second05=0.5
 
 trade=1_500_000
 bol_con = 2
+min_rate = 0.6
 
 def send_discord_message(msg):
     """discord 메시지 전송"""
@@ -348,7 +349,7 @@ def trade_sell(ticker):
             send_discord_message(f"[장 시작전 매도]: [{ticker}] / 수익률: {profit_rate:.1f}% / {current_price:,.2f} < upperBand_99%: {up_Bol[len(up_Bol)-1] * 0.99:,.2f}")
                            
     else:
-        if profit_rate >= 0.6:
+        if profit_rate >= min_rate:
             while attempts < max_attempts:
                 current_price = pyupbit.get_current_price(ticker)  # 현재 가격 재조회
                 profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
@@ -364,7 +365,7 @@ def trade_sell(ticker):
                     time.sleep(second05)                                                                                                                            
                 attempts += 1  # 조회 횟수 증가
                 
-            if profit_rate >= 0.6 and df_high[0] > up_Bol[len(up_Bol)-1] * 0.99 and srsi_k_1[2] > 0.9:
+            if profit_rate >= min_rate and df_high[0] > up_Bol[len(up_Bol)-1] * 0.99 and srsi_k_1[2] > 0.9:
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
                 send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.1f}% 현재가: {current_price:,.2f} \n 고가: {df_high[0]:,.2f} > 볼밴상단: {up_Bol[len(up_Bol)-1] * 0.99:,.2f} srsi: {srsi_k_1[2]:,.2f} > 0.9")
                 print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.1f}% 현재가: {current_price:,.2f} \n 고가: {df_high[0]:,.2f} > 볼밴상단: {up_Bol[len(up_Bol)-1] * 0.99:,.2f} srsi: {srsi_k_1[2]:,.2f} > 0.9")
