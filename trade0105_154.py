@@ -29,6 +29,7 @@ second05=0.5
 # second01=0.1
 
 trade=1_500_000
+bol_con = 2
 
 def send_discord_message(msg):
     """discord 메시지 전송"""
@@ -145,7 +146,7 @@ def filtered_tickers(tickers):
             count_below_lower_band = sum(1 for i in range(len(lower_band)) if df_5_close[i] < lower_band[i])
             
             # 종가가 볼린저 밴드의 하단값 이하인 경우가 2번 이상 발생하는지 확인
-            lower_boliinger = count_below_lower_band >= 2
+            lower_boliinger = count_below_lower_band >= bol_con
             
             # low_price = (df_5_close[len(band_diff) - 1] < cur_price < lower_band[len(band_diff) - 1] * 1.005) or (cur_price < lower_band[len(band_diff) - 1]*0.99)
 
@@ -363,7 +364,7 @@ def trade_sell(ticker):
                     time.sleep(second05)                                                                                                                            
                 attempts += 1  # 조회 횟수 증가
                 
-            if profit_rate >= 0.7 and df_high[0] > up_Bol[len(up_Bol)-1] * 0.995 and srsi_k_1[2] > 0.9:
+            if profit_rate >= 0.6 and df_high[0] > up_Bol[len(up_Bol)-1] * 0.99 and srsi_k_1[2] > 0.9:
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
                 send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.1f}% 현재가: {current_price:,.2f} \n 고가: {df_high[0]:,.2f} > 볼밴상단: {up_Bol[len(up_Bol)-1] * 0.995:,.2f} srsi: {srsi_k_1[2]:,.2f} > 0.9")
                 print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.1f}% 현재가: {current_price:,.2f} \n 고가: {df_high[0]:,.2f} > 볼밴상단: {up_Bol[len(up_Bol)-1] * 0.995:,.2f} srsi: {srsi_k_1[2]:,.2f} > 0.9")
@@ -501,14 +502,14 @@ def additional_buy_logic():
                 count_below_lower_band = sum(1 for i in range(len(lower_band)) if df_close[i] < lower_band[i])
                 
                 # 종가가 볼린저 밴드의 하단값 이하인 경우가 2번 이상 발생하는지 확인
-                lower_boliinger = count_below_lower_band >= 2
+                lower_boliinger = count_below_lower_band >= bol_con
                 # low_bollenger = any(lower_band[i + 1] >= df_close[i + 1] for i in range(len(band_diff) - 1))
                 low_price = (df_close[len(band_diff) - 1] < current_price < lower_band[len(band_diff) - 1] * 1.005) or (current_price < lower_band[len(band_diff) - 1]*0.99)
                                 
                 stoch_Rsi = stoch_rsi(ticker, interval=minute5)
                 srsi_k = stoch_Rsi['%K'].values
         
-                if profit_rate < -2 and is_increasing and lower_boliinger :   #-2% 미만, 조건1, 조건1
+                if profit_rate < -2 and krw > 0 and is_increasing and lower_boliinger :   #-2% 미만, 조건1, 조건1
                     if low_price and srsi_k[2] < 0.3 :                      #조건3, sRSI 0.4미만
                         result = upbit.buy_market_order(ticker, buy_size)  # 추가 매수 실행
 
