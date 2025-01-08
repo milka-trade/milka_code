@@ -31,6 +31,7 @@ second05=0.5
 trade=1_500_000
 bol_con = 2
 min_rate = 0.6
+profit_margin = -4
 
 def send_discord_message(msg):
     """discord 메시지 전송"""
@@ -510,7 +511,7 @@ def additional_buy_logic():
                 stoch_Rsi = stoch_rsi(ticker, interval=minute5)
                 srsi_k = stoch_Rsi['%K'].values
         
-                if profit_rate < -2 and krw > 200_000 and is_increasing and lower_boliinger :   #-2% 미만, 조건1, 조건1
+                if profit_rate < profit_margin and krw > 200_000 and is_increasing and lower_boliinger :   #-2% 미만, 조건1, 조건1
                     if low_price and srsi_k[2] < 0.3 :                      #조건3, sRSI 0.4미만
                         result = upbit.buy_market_order(ticker, buy_size)  # 추가 매수 실행
 
