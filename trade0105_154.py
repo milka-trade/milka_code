@@ -366,8 +366,8 @@ def trade_sell(ticker):
                 
             if profit_rate >= 0.6 and df_high[0] > up_Bol[len(up_Bol)-1] * 0.99 and srsi_k_1[2] > 0.9:
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
-                send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.1f}% 현재가: {current_price:,.2f} \n 고가: {df_high[0]:,.2f} > 볼밴상단: {up_Bol[len(up_Bol)-1] * 0.995:,.2f} srsi: {srsi_k_1[2]:,.2f} > 0.9")
-                print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.1f}% 현재가: {current_price:,.2f} \n 고가: {df_high[0]:,.2f} > 볼밴상단: {up_Bol[len(up_Bol)-1] * 0.995:,.2f} srsi: {srsi_k_1[2]:,.2f} > 0.9")
+                send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.1f}% 현재가: {current_price:,.2f} \n 고가: {df_high[0]:,.2f} > 볼밴상단: {up_Bol[len(up_Bol)-1] * 0.99:,.2f} srsi: {srsi_k_1[2]:,.2f} > 0.9")
+                print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.1f}% 현재가: {current_price:,.2f} \n 고가: {df_high[0]:,.2f} > 볼밴상단: {up_Bol[len(up_Bol)-1] * 0.99:,.2f} srsi: {srsi_k_1[2]:,.2f} > 0.9")
                 return sell_order   
             else:
                 return None
