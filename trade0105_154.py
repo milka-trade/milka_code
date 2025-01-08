@@ -510,7 +510,7 @@ def additional_buy_logic():
                 stoch_Rsi = stoch_rsi(ticker, interval=minute5)
                 srsi_k = stoch_Rsi['%K'].values
         
-                if profit_rate < -2 and krw > 0 and is_increasing and lower_boliinger :   #-2% 미만, 조건1, 조건1
+                if profit_rate < -2 and krw > 200_000 and is_increasing and lower_boliinger :   #-2% 미만, 조건1, 조건1
                     if low_price and srsi_k[2] < 0.3 :                      #조건3, sRSI 0.4미만
                         result = upbit.buy_market_order(ticker, buy_size)  # 추가 매수 실행
 
