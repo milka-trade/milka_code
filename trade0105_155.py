@@ -221,7 +221,7 @@ def get_best_ticker():
 
                 cur_price = pyupbit.get_current_price(ticker)
 
-                if ticker in selected_tickers or day_value[0] > sol_value[0] * 2 :
+                if ticker in selected_tickers or day_value[0] > sol_value[0] * 3 :
                     if cur_price < day_price[0] * 1.05:  
                         # print(f'{ticker} 일 거래량: {day_value[0]:,.0f} >= SOL 거래량: {sol_value[0]:,.0f}')
                         filtering_tickers.append(ticker)
@@ -477,8 +477,6 @@ def buying_logic():
 def additional_buy_logic():
     while True:
         balances = upbit.get_balances()
-        currency = ticker.split("-")[1]
-        buyed_amount = get_balance(currency)
         krw = get_balance("KRW")
         buy_size = min(trade, krw*0.9995)
         
