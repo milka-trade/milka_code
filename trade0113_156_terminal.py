@@ -47,7 +47,7 @@ def send_discord_message(msg):
 def get_user_input():
     global trade_Qunat, bol_touch_time, min_rate, max_rate, profit_margin
 
-    trade_Qunat = float(input("거래 금액 (예: 1_000_000): "))
+    trade_Qunat = float(input("최대 단위 금액 (예: 1_000_000): "))
     bol_touch_time = int(input("볼린저 밴드 접촉 횟수 (예: 2): "))
     min_rate = float(input("최소 수익률 (예: 0.6): "))
     max_rate = float(input("최대 수익률 (예: 2.0): "))
@@ -452,7 +452,7 @@ def buying_logic():
 
             else:  # 매수 금지 시간이 아닐 때
                 krw_balance = get_balance("KRW")  # 현재 KRW 잔고 조회
-                if krw_balance > 500_000: 
+                if krw_balance > min_krw: 
                     best_ticker, interest, best_k = get_best_ticker()
 
                     if best_ticker:
