@@ -33,6 +33,7 @@ bol_touch_time = 2
 min_rate = 0.6
 max_rate = 2.0
 profit_margin = -4
+min_krw = 50_000
 
 def send_discord_message(msg):
     """discord 메시지 전송"""
@@ -46,11 +47,12 @@ def send_discord_message(msg):
 def get_user_input():
     global trade_Qunat, bol_touch_time, min_rate, max_rate, profit_margin
 
-    trade_Qunat = float(input("거래 금액을 입력하세요 (예: 1_000_000): "))
-    bol_touch_time = int(input("볼린저 밴드 접촉 횟수를 입력하세요 (예: 2): "))
-    min_rate = float(input("최소 수익률을 입력하세요 (예: 0.6): "))
-    max_rate = float(input("최대 수익률을 입력하세요 (예: 2.0): "))
-    profit_margin = float(input("추가매수 감시 수익률을 입력하세요 (예: -4): "))
+    trade_Qunat = float(input("거래 금액 (예: 1_000_000): "))
+    bol_touch_time = int(input("볼린저 밴드 접촉 횟수 (예: 2): "))
+    min_rate = float(input("최소 수익률 (예: 0.6): "))
+    max_rate = float(input("최대 수익률 (예: 2.0): "))
+    profit_margin = float(input("추가매수 감시 수익률 (예: -4): "))
+    min_krw = float(input("최소 거래금액 (예: 50_000): "))
 
 def get_balance(ticker):
     try:
@@ -287,7 +289,7 @@ def trade_buy(ticker, k):
     low_price = max_LBand_df_open < cur_price < lower_band[len(lower_band) - 1] * 1.005
     # low_price = (lower_band[len(lower_band) - 1] < cur_price < lower_band[len(lower_band) - 1] * 1.005) or (cur_price < lower_band[len(lower_band) - 1]*0.99)
     
-    if krw >= 500_000 :  # 매수 조건 확인
+    if krw >= min_krw :  # 매수 조건 확인
         target_price = get_target_price(ticker, k)
         
         while attempt < max_retries:
@@ -517,7 +519,7 @@ def additional_buy_logic():
                 stoch_Rsi = stoch_rsi(ticker, interval=minute5)
                 srsi_k = stoch_Rsi['%K'].values
         
-                if profit_rate < profit_margin and krw > 200_000 and buyed_amount < buy_size and is_increasing and lower_boliinger :
+                if profit_rate < profit_margin and krw > 500_000 and buyed_amount < buy_size and is_increasing and lower_boliinger :
                     if low_price and 0 < srsi_k[1] < srsi_k[2] < 0.3 :
                         result = upbit.buy_market_order(ticker, buy_size)  # 추가 매수 실행
 
@@ -525,9 +527,9 @@ def additional_buy_logic():
                             print(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.0f} \n L_boliinger: {lower_boliinger} >= 2 / 0 < srsi1: {srsi_k[1]:,.2f} < srsk2: {srsi_k[2]:,.2f} < 0.3")
                             send_discord_message(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.0f} \n L_boliinger: {lower_boliinger} >= 2 / 0 < srsi1: {srsi_k[1]:,.2f} < srsk2: {srsi_k[2]:,.2f} < 0.3")
 
-                else:
-                    print(f'조건 미충족: {ticker} / 수익률 : {profit_rate:,.1f}')
-                    send_discord_message(f'조건 미충족: {ticker} / 수익률 : {profit_rate:,.1f}')
+                    else:
+                        print(f'조건 미충족: {ticker} / 수익률 : {profit_rate:,.1f}')
+                        send_discord_message(f'조건 미충족: {ticker} / 수익률 : {profit_rate:,.1f}')
             
         time.sleep(150)
 
