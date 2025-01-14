@@ -140,11 +140,11 @@ def filtered_tickers(tickers):
     
     for t in tickers:
         try:
-            df = pyupbit.get_ohlcv(t, interval=minute, count=4)
+            df = pyupbit.get_ohlcv(t, interval=minute5, count=4)
             time.sleep(second05)            
             df_close = df['close'].values
 
-            bands_df = get_bollinger_bands(t, interval=minute)
+            bands_df = get_bollinger_bands(t, interval=minute5)
             lower_band = bands_df['Lower_Band'].values
             upper_band = bands_df['Upper_Band'].values
             band_diff = upper_band - lower_band
@@ -276,11 +276,11 @@ def trade_buy(ticker, k):
     attempt = 0  # 시도 횟수 초기화
     target_price = None  # target_price 초기화
 
-    df = pyupbit.get_ohlcv(ticker, interval=minute, count=4)
+    df = pyupbit.get_ohlcv(ticker, interval=minute5, count=4)
     time.sleep(second05)            
     df_open = df['open'].values
 
-    bands_df = get_bollinger_bands(ticker, interval=minute)
+    bands_df = get_bollinger_bands(ticker, interval=minute5)
     lower_band = bands_df['Lower_Band'].values
     last_LBand = lower_band[len(lower_band) - 1]
     last_df_open = df_open[len(df_open) - 1]
