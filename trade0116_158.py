@@ -396,12 +396,9 @@ def send_profit_report():
                 avg_buy_price = float(b['avg_buy_price'])
                 current_price = pyupbit.get_current_price(ticker)
                 
-                s_rsi = stoch_rsi(ticker, interval=minute5)
-                sRSI_K = s_rsi['%K'].values
-
                 if buyed_amount > 0:
                     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
-                    report_message += f"[{b['currency']}] 수익률: {profit_rate:.1f}% s_RSI_K:{sRSI_K[2]:.2f}\n"
+                    report_message += f"[{b['currency']}] 현재가: {current_price:,.1f} 수익률: {profit_rate:.1f}% \n"
 
             send_discord_message(report_message)
 
