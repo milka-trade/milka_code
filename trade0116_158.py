@@ -152,10 +152,10 @@ def filtered_tickers(tickers):
             stoch_Rsi = stoch_rsi(t, interval=minute5)
             srsi_k = stoch_Rsi['%K'].values
 
-            is_increasing = all(band_diff[i] < band_diff[i + 1] * 1.0002 for i in range(len(band_diff) - 1))
+            is_increasing = all(band_diff[i] < band_diff[i + 1] * 1.0001 for i in range(len(band_diff) - 1))
             
             # 볼린저 밴드의 하단값과 종가를 비교하여, 종가가 하단값 이하인 경우의 수를 센다
-            count_below_lower_band = sum(1 for i in range(len(lower_band)) if df_close[i] < lower_band[i])
+            count_below_lower_band = sum(1 for i in range(len(lower_band)) if df_close[i] < lower_band[i] * 1.001)
             
             # 종가가 볼린저 밴드의 하단값 이하인 경우가 2번 이상 발생하는지 확인
             lower_boliinger = count_below_lower_band >= bol_touch_time
@@ -231,7 +231,7 @@ def get_best_ticker():
     filtered_time = datetime.now().strftime('%m/%d %H:%M:%S')  # 시작시간 기록
     filtered_list = filtered_tickers(filtering_tickers)
     
-    send_discord_message(f"{filtered_time} [{filtered_list}]")
+    # send_discord_message(f"{filtered_time} [{filtered_list}]")
     print(f"[{filtered_list}]")
     
     bestC = None  # 초기 최고 코인 초기화
@@ -501,7 +501,7 @@ def additional_buy_logic():
                 band_diff = upper_band - lower_band
                 
                 # is_increasing = all(lower_band[i] < lower_band[i + 1] for i in range(len(lower_band) - 1))
-                is_increasing = all(band_diff[i] < band_diff[i + 1] * 1.0002 for i in range(len(band_diff) - 1))
+                is_increasing = all(band_diff[i] < band_diff[i + 1] * 1.0001 for i in range(len(band_diff) - 1))
 
                 # 볼린저 밴드의 하단값과 종가를 비교하여, 종가가 하단값 이하인 경우의 수를 센다
                 count_below_lower_band = sum(1 for i in range(len(lower_band)) if df_close[i] < lower_band[i])
