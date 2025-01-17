@@ -143,6 +143,9 @@ def filtered_tickers(tickers):
             df = pyupbit.get_ohlcv(t, interval=minute5, count=4)
             time.sleep(second05)            
             df_close = df['close'].values
+            df_open = df['open'].values
+
+            cur_price = pyupbit.get_current_price(t)
 
             bands_df = get_bollinger_bands(t, interval=minute5)
             lower_band = bands_df['Lower_Band'].values
@@ -152,21 +155,39 @@ def filtered_tickers(tickers):
             stoch_Rsi = stoch_rsi(t, interval=minute5)
             srsi_k = stoch_Rsi['%K'].values
 
+            # (조건 1)볼린저 밴드의 폭이 4시계열 연속 0.1%이상 상승하는지 확인
             is_increasing = all(band_diff[i] < band_diff[i + 1] * 1.0001 for i in range(len(band_diff) - 1))
             
-            # 볼린저 밴드의 하단값과 종가를 비교하여, 종가가 하단값 이하인 경우의 수를 센다
-            count_below_lower_band = sum(1 for i in range(len(lower_band)) if df_close[i] < lower_band[i] * 1.001)
+            # (조건 2) 볼린저 밴드의 하단값과 종가를 비교하여, 종가가 하단값 이하인 경우의 수를 센다
+            count_below_lower_band = sum(1 for i in range(len(lower_band)) if df_close[i] < lower_band[i])
             
-            # 종가가 볼린저 밴드의 하단값 이하인 경우가 2번 이상 발생하는지 확인
+            # (조건 3) 종가가 볼린저 밴드의 하단값 이하인 경우가 2번 이상 발생하는지 확인
             lower_boliinger = count_below_lower_band >= bol_touch_time
             
-            if is_increasing:
-                # print(f'[cond 1] {t} 볼린저 폭 확대: {lower_band[0]:,.1f} > {lower_band[1]:,.1f} > {lower_band[2]:,.1f}')
+            last_LBand = lower_band[len(lower_band) - 1]
+            last_df_open = df_open[len(df_open) - 1]
+            max_LBand_df_open = max(last_LBand, last_df_open)
+
+            # (조건 4) 현재가가 전봉 시가와 볼밴하단가 중 큰값이상인지 확인
+            low_price = max_LBand_df_open < cur_price < lower_band[len(lower_band) - 1] * 1.01
+
+            if is_increasing :
+                print(f'[cond 1] {t} 볼린저 폭 확대: {is_increasing}')
+                send_discord_message(f'[cond 1] {t} 볼린저 폭 확대: {is_increasing}')
                     
-                if lower_boliinger and 0 < srsi_k[1] < srsi_k[2] < 0.3 : 
-                    # print(f'[cond 2] {t} lower_boliinger: {lower_boliinger} >= 2 / 0 < srsi1: {srsi_k[1]:,.2f} < srsk2: {srsi_k[2]:.2f} < 0.3')
-                    # send_discord_message(f'[cond 2] {t} lower_boliinger: {lower_boliinger} >= 2 / 0 < srsi1: {srsi_k[1]:,.2f} < srsk2: {srsi_k[2]:,.2f} < 0.3')
-                    filtered_tickers.append(t)
+                if lower_boliinger : 
+                    print(f'[cond 2] {t} lower_boliinger: {lower_boliinger} >= {bol_touch_time}')
+                    send_discord_message(f'[cond 2] {t} lower_boliinger: {lower_boliinger} >= {bol_touch_time}')
+
+                    if low_price :
+                        print(f'[cond 3] {t} low_price: {low_price}')
+                        send_discord_message(f'[cond 3] {t} low_price: {low_price}')
+
+                        if 0 < srsi_k[1] < srsi_k[2] < 0.3 :
+                            print(f'[cond 4] {t} 0 < srsi1: {srsi_k[1]:,.2f} < srsk2: {srsi_k[2]:.2f} < 0.3')
+                            send_discord_message(f'[cond 4] {t} 0 < srsi1: {srsi_k[1]:,.2f} < srsk2: {srsi_k[2]:.2f} < 0.3')
+
+                            filtered_tickers.append(t)
 
         except (KeyError, ValueError) as e:
             send_discord_message(f"filtered_tickers/Error processing ticker {t}: {e}")
@@ -200,7 +221,7 @@ def get_best_k(ticker):
     return bestK
 
 def get_best_ticker():
-    selected_tickers = ["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-SOL", "KRW-ADA", "KRW-XLM", "KRW-DOGE", "KRW-HBAR", "KRW-HBAR", "KRW-HBAR"]
+    selected_tickers = ["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-SOL", "KRW-ADA", "KRW-XLM", "KRW-DOGE", "KRW-HBAR"]
     balances = upbit.get_balances()
     held_coins = []
 
@@ -219,7 +240,7 @@ def get_best_ticker():
                 df = pyupbit.get_ohlcv(ticker, interval="day", count=2)
                 day_price = df['open'].values
 
-                if cur_price < day_price[1] * 1.05 and cur_price < day_price[0] * 1.1:  
+                if cur_price < day_price[1] * 1.05 and cur_price < day_price[0] * 1.15:  
                     filtering_tickers.append(ticker)
 
     except (KeyError, ValueError) as e:
@@ -231,7 +252,7 @@ def get_best_ticker():
     filtered_time = datetime.now().strftime('%m/%d %H:%M:%S')  # 시작시간 기록
     filtered_list = filtered_tickers(filtering_tickers)
     
-    # send_discord_message(f"{filtered_time} [{filtered_list}]")
+    send_discord_message(f"{filtered_time} [{filtered_list}]")
     print(f"[{filtered_list}]")
     
     bestC = None  # 초기 최고 코인 초기화
@@ -240,7 +261,7 @@ def get_best_ticker():
 
     for ticker in filtered_list:   # 조회할 코인 필터링
         k = get_best_k(ticker)
-        df = pyupbit.get_ohlcv(ticker, interval=minute, count=count_20)
+        df = pyupbit.get_ohlcv(ticker, interval=minute5, count=count_20)
         time.sleep(second05)
         if df is None or df.empty:
             continue
@@ -273,19 +294,6 @@ def trade_buy(ticker, k):
     
     attempt = 0  # 시도 횟수 초기화
     target_price = None  # target_price 초기화
-
-    df = pyupbit.get_ohlcv(ticker, interval=minute5, count=4)
-    time.sleep(second05)            
-    df_open = df['open'].values
-
-    bands_df = get_bollinger_bands(ticker, interval=minute5)
-    lower_band = bands_df['Lower_Band'].values
-    last_LBand = lower_band[len(lower_band) - 1]
-    last_df_open = df_open[len(df_open) - 1]
-    max_LBand_df_open = max(last_LBand, last_df_open)
-
-    low_price = max_LBand_df_open < cur_price < lower_band[len(lower_band) - 1] * 1.005
-    # low_price = (lower_band[len(lower_band) - 1] < cur_price < lower_band[len(lower_band) - 1] * 1.005) or (cur_price < lower_band[len(lower_band) - 1]*0.99)
     
     if krw >= min_krw :  # 매수 조건 확인
         target_price = get_target_price(ticker, k)
@@ -295,13 +303,13 @@ def trade_buy(ticker, k):
             print(f"가격 확인 중: [{ticker}] 현재가: {cur_price:,.2f} / < 목표가: {target_price:,.2f}  시도: {attempt} - 최대: {max_retries}")
             # send_discord_message(f"가격 확인 중: [{ticker}] 현재가:{cur_price:,.2f} / < 목표가:{target_price:,.2f}  시도:{attempt} - 최대:{max_retries}")
             
-            if cur_price <= target_price and low_price:
+            if cur_price <= target_price:
                 buy_attempts = 3
                 for i in range(buy_attempts):
                     try:
                         buy_order = upbit.buy_market_order(ticker, buy_size)
-                        print(f"매수 성공: {ticker} < 타겟: {target_price:,.2f} / low_price: {low_price} / 시도횟수: {attempt}")
-                        send_discord_message(f"매수 성공: {ticker} < 타겟: {target_price:,.2f} / low_price: {low_price} / 시도횟수:{attempt}")
+                        print(f"매수 성공: {ticker} < 타겟: {target_price:,.2f} / 시도횟수: {attempt}")
+                        send_discord_message(f"매수 성공: {ticker} < 타겟: {target_price:,.2f} / 시도횟수:{attempt}")
                         return buy_order
 
                     except (KeyError, ValueError) as e:
@@ -501,7 +509,7 @@ def additional_buy_logic():
                 band_diff = upper_band - lower_band
                 
                 # is_increasing = all(lower_band[i] < lower_band[i + 1] for i in range(len(lower_band) - 1))
-                is_increasing = all(band_diff[i] < band_diff[i + 1] * 1.0001 for i in range(len(band_diff) - 1))
+                is_increasing = all(band_diff[i] < band_diff[i + 1] * 1.0002 for i in range(len(band_diff) - 1))
 
                 # 볼린저 밴드의 하단값과 종가를 비교하여, 종가가 하단값 이하인 경우의 수를 센다
                 count_below_lower_band = sum(1 for i in range(len(lower_band)) if df_close[i] < lower_band[i])
@@ -518,6 +526,7 @@ def additional_buy_logic():
                 srsi_k = stoch_Rsi['%K'].values
         
                 if profit_rate < profit_margin and krw > 500_000 and buyed_amount < buy_size and is_increasing and lower_boliinger :
+
                     if low_price and 0 < srsi_k[1] < srsi_k[2] < 0.3 :
                         result = upbit.buy_market_order(ticker, buy_size)  # 추가 매수 실행
 
@@ -526,8 +535,8 @@ def additional_buy_logic():
                             send_discord_message(f"추가 매수: {ticker} / 수익률: {profit_rate:,.1f} / 금액: {buy_size:,.0f} \n L_boliinger: {lower_boliinger} >= 2 / 0 < srsi1: {srsi_k[1]:,.2f} < srsk2: {srsi_k[2]:,.2f} < 0.3")
 
                     else:
-                        print(f'조건 미충족: {ticker} / 수익률 : {profit_rate:,.1f}')
-                        send_discord_message(f'조건 미충족: {ticker} / 수익률 : {profit_rate:,.1f}')
+                        print(f'추매조건 미충족: {ticker} / 수익률 : {profit_rate:,.1f} / low_price:{low_price} / srsi:{srsi_k[2]:,.2f}')
+                        send_discord_message(f'추매조건 미충족: {ticker} / 수익률 : {profit_rate:,.1f} / low_price:{low_price} / srsi:{srsi_k[2]:,.2f}')
             
         time.sleep(150)
 
