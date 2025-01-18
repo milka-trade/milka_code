@@ -563,6 +563,8 @@ def additional_buy_logic():
                 cur_price = pyupbit.get_current_price(ticker)  # 현재가 조회
                 avg_buy_price = upbit.get_avg_buy_price(b['currency']) 
                 profit_rate = (cur_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0 
+                holding_value = buyed_amount * cur_price if cur_price is not None else 0
+                # print(f'{ticker} 보유량: {buyed_amount:,.2f} / 보유금액: {holding_value:,.0f}')
             
                 df = pyupbit.get_ohlcv(ticker, interval=minute5, count=4)
                 time.sleep(second05)
@@ -593,7 +595,7 @@ def additional_buy_logic():
                 srsi_k = stoch_Rsi['%K'].values
                 # print(srsi_k)
         
-                if profit_rate < profit_margin and krw > 500_000 and buyed_amount < buy_size and is_increasing and lower_boliinger :
+                if profit_rate < profit_margin and krw > 500_000 and holding_value < buy_size * 2 and is_increasing and lower_boliinger :
 
                     if low_price and 0 < srsi_k[2] < 0.3 :
                         result = upbit.buy_market_order(ticker, buy_size)  # 추가 매수 실행
