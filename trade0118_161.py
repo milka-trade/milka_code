@@ -313,11 +313,11 @@ def get_best_ticker():
         time.sleep(second1)  # API 호출 제한을 위한 대기
         return None, None, None
 
-    filtered_time = datetime.now().strftime('%m/%d %H:%M:%S')  # 시작시간 기록
+    # filtered_time = datetime.now().strftime('%m/%d %H:%M:%S')  # 시작시간 기록
     filtered_list = filtered_tickers(filtering_tickers)
     
-    send_discord_message(f"{filtered_time} [{filtered_list}]")
-    print(f"[{filtered_list}]")
+    # send_discord_message(f"{filtered_time} [{filtered_list}]")
+    # print(f"[{filtered_list}]")
     
     bestC = None  # 초기 최고 코인 초기화
     interest = 0  # 초기 수익률
@@ -606,7 +606,7 @@ def additional_buy_logic():
 
                     else:
                         print(f'추매조건 미충족: {ticker} / 수익률: {profit_rate:,.1f} / low_price:{low_price} / srsi:{srsi_k[2]:,.2f}')
-                        # send_discord_message(f'추매조건 미충족: {ticker} / 수익률 : {profit_rate:,.1f} / low_price:{low_price} / srsi:{srsi_k[2]:,.2f}')
+                        send_discord_message(f'추매조건 미충족: {ticker} / 수익률 : {profit_rate:,.1f} / low_price:{low_price} / srsi:{srsi_k[2]:,.2f}')
                         time.sleep(second1)
             
         time.sleep(60)
