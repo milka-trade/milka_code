@@ -245,7 +245,7 @@ def filtered_tickers(tickers):
 
             if is_downing :
                 print(f'[미선정] {t} 볼린저 하락: {is_downing} / 볼린저 터치: {lower_boliinger} / srsi: {srsi_k[2]:,.2f} / lowPrice: {low_price}')
-                send_discord_message(f'[미선정] {t} 볼린저 하락: {is_downing} / 볼린저 터치: {lower_boliinger} / srsi: {srsi_k[2]:,.2f} / lowPrice: {low_price}')
+                # send_discord_message(f'[미선정] {t} 볼린저 하락: {is_downing} / 볼린저 터치: {lower_boliinger} / srsi: {srsi_k[2]:,.2f} / lowPrice: {low_price}')
                 
                 if lower_boliinger and 0 < srsi_k[2] < 0.3 and low_price :
                     # print(f'{t} 볼린저 하락:{is_downing} / 볼린저 터치:{lower_boliinger} / srsi:{srsi_k[2]} / lowPrice:{low_price}')
