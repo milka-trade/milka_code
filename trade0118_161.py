@@ -115,8 +115,8 @@ def get_ema(ticker, window):
         return 0  # 데이터가 없으면 0 반환
 
 def stoch_rsi(ticker, interval = minute5):
-    df = pyupbit.get_ohlcv(ticker, interval=interval, count=count_200)
-    # df = load_ohlcv_1(ticker)
+    # df = pyupbit.get_ohlcv(ticker, interval=interval, count=count_200)
+    df = load_ohlcv_5(ticker)
     time.sleep(second05)
      
     rsi = ta.momentum.RSIIndicator(df['close'], window=14).rsi()
@@ -565,9 +565,9 @@ def additional_buy_logic():
                 srsi_k = stoch_Rsi['%K'].values
                 # print(srsi_k)
         
-                if krw > 500_000 and holding_value < buy_size * 2 :
+                if profit_rate < profit_margin and krw > 500_000 and holding_value < buy_size * 2 :
 
-                    if profit_rate < profit_margin and low_price and is_downing and lower_boliinger and 0 < srsi_k[2] < 0.3 :
+                    if low_price and is_downing and lower_boliinger and 0 < srsi_k[2] < 0.3 :
                         result = upbit.buy_market_order(ticker, buy_size)  # 추가 매수 실행
 
                         if result:
