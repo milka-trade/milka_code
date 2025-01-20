@@ -134,12 +134,12 @@ def filtered_tickers(tickers):
     for t in tickers:
         try:
             df = pyupbit.get_ohlcv(t, interval=minute5, count=4)
-            time.sleep(second)            
-            # df_close = df['close'].values
-            # df_open = df['open'].values
+            if df is None:
+                print(f"[filter_tickers] 데이터를 가져올 수 없습니다. {t}")
+                send_discord_message(f"[filter_tickers] 데이터를 가져올 수 없습니다: {t}")
+                continue  # 다음 티커로 넘어감
+            time.sleep(1)            
             df_low = df['low'].values
-
-            # cur_price = pyupbit.get_current_price(t)
 
             bands_df = get_bollinger_bands(t, interval= minute5)
             lower_band = bands_df['Lower_Band'].values
@@ -171,7 +171,7 @@ def filtered_tickers(tickers):
     return filtered_tickers
 
 def get_best_ticker():
-    selected_tickers = ["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-SOL", "KRW-ADA", "KRW-XLM", "KRW-DOGE", "KRW-HBAR"]
+    selected_tickers = ["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-SOL", "KRW-ADA", "KRW-XLM", "KRW-DOGE", "KRW-HBAR", "KRW-SAND", "KRW-ETC"]
     balances = upbit.get_balances()
     held_coins = []
 
@@ -188,6 +188,7 @@ def get_best_ticker():
             if ticker in selected_tickers and ticker not in held_coins:
                 cur_price = pyupbit.get_current_price(ticker)
                 df = pyupbit.get_ohlcv(ticker, interval="day", count=2)
+                time.sleep(0.5)
                 day_price = df['open'].values
 
                 if cur_price < day_price[1] * 1.05 and cur_price < day_price[0] * 1.15:  
