@@ -390,14 +390,14 @@ def buying_logic():
                     send_discord_message(f"[{buy_time}] 선정코인: [{best_ticker}]")
                     result = trade_buy(best_ticker)
                     if result:  # 매수 성공 여부 확인
-                        time.sleep(15)
+                        time.sleep(30)
                     else:
                         return None
                 else:
-                    time.sleep(15)
+                    time.sleep(30)
 
             else:
-                time.sleep(15)
+                time.sleep(30)
 
         except (KeyError, ValueError) as e:
             print(f"buying_logic / 에러 발생: {e}")
