@@ -157,10 +157,10 @@ def filtered_tickers(tickers):
            
             # print(f'[미선정] {t} 볼린저 하락: {is_downing} / 볼린저 터치: {lower_boliinger} / srsi: {srsi_buy} {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
             if is_downing :
-                print(f'[미선정] {t} 볼린저 하락: {is_downing} / 볼린저 터치: {lower_boliinger} / srsi: {srsi_buy} {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
+                # print(f'[미선정] {t} 볼린저 하락: {is_downing} / 볼린저 터치: {lower_boliinger} / srsi: {srsi_buy} {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
                 
                 if lower_boliinger and srsi_buy :
-                    # print(f'{t} 볼린저 하락:{is_downing} / 볼린저 터치:{lower_boliinger} / srsi:{srsi_k[2]} / lowPrice:{low_price}')
+                    print(f'{t} 볼린저 하락:{is_downing} / 볼린저 터치:{lower_boliinger} / srsi: {srsi_buy} {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
                     send_discord_message(f'{t} 볼린저 하락:{is_downing} / 볼린저 터치:{lower_boliinger} / srsi: {srsi_buy} {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
                     filtered_tickers.append(t)
                     
