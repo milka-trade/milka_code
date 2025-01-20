@@ -153,7 +153,7 @@ def filtered_tickers(tickers):
             # (조건 2) 볼린저 밴드의 하단값과 종가를 비교하여, 종가가 하단값 이하인 경우가 n번 이상 발생하는지 확인
             count_below_lower_band = sum(1 for i in range(len(lower_band)) if df_low[i] < lower_band[i])
             lower_boliinger = count_below_lower_band >= bol_touch_time
-            srsi_buy = 0 < srsi_k[1] < srsi_k[2] < 0.3
+            srsi_buy = 0 <= srsi_k[1] < srsi_k[2] < 0.5
            
             # print(f'[미선정] {t} 볼린저 하락: {is_downing} / 볼린저 터치: {lower_boliinger} / srsi: {srsi_buy} {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
             if is_downing :
@@ -227,7 +227,7 @@ def get_best_ticker():
 def trade_buy(ticker):
     
     krw = get_balance("KRW")
-    max_retries = 5  
+    max_retries = 20  
     buy_size = min(trade_Qunat, krw*0.9995)
     cur_price = pyupbit.get_current_price(ticker)
     
@@ -243,7 +243,7 @@ def trade_buy(ticker):
     last_df_open = df_open[len(df_open) - 1]
     last_df_close = df_close[len(df_close) - 1]
 
-    low_price = (last_df_open < last_df_close) and (lower_band[len(lower_band) - 1] < cur_price < lower_band[len(lower_band) - 1] * 1.005)
+    low_price = (last_df_open < last_df_close) and (lower_band[len(lower_band) - 1] < cur_price < lower_band[len(lower_band) - 1] * 1.02)
     
     if krw >= min_krw :
         
@@ -440,11 +440,11 @@ def additional_buy_logic():
                 last_LBand = lower_band[len(lower_band) - 1]
                 last_df_open = df_open[len(df_open) - 1]
                 last_df_close = df_close[len(df_close) - 1]
-                low_price = (last_df_open < last_df_close) and (last_LBand < cur_price < last_LBand * 1.0005)
+                low_price = (last_df_open < last_df_close) and (last_LBand < cur_price < last_LBand * 1.02)
                                 
                 stoch_Rsi = stoch_rsi(ticker, interval = minute5)
                 srsi_k = stoch_Rsi['%K'].values
-                srsi_buy = 0 < srsi_k[1] < srsi_k[2] < 0.3
+                srsi_buy = 0 <= srsi_k[1] < srsi_k[2] < 0.5
         
                 if profit_rate < profit_margin and krw > 500_000 and holding_value < buy_size * 2 :
 
