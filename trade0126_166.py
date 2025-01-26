@@ -44,14 +44,14 @@ def send_discord_message(msg):
 def get_user_input():
     global trade_Quant, add_trade_Quant, bol_touch_time, max_rate, profit_margin, sell_time
 
-    trade_Quant = float(input("최대 단위 금액 (예: 1_000_000): "))
-    add_trade_Quant = float(input("추가매수 금액 (예: 500_000): "))
+    trade_Quant = float(input("최대 단위 금액 (예: 1_200_000): "))
+    add_trade_Quant = float(input("추가매수 금액 (예: 600_000): "))
     bol_touch_time = int(input("볼린저 밴드 접촉 횟수 (예: 2): "))
     # min_rate = float(input("최소 수익률 (예: 0.6): "))
     max_rate = float(input("최대 수익률 (예: 3.0): "))
-    profit_margin = float(input("추가매수 감시 수익률 (예: -2): "))
+    profit_margin = float(input("추가매수 감시 수익률 (예: -2.5): "))
     # min_krw = float(input("최소 거래금액 (예: 50_000): "))
-    sell_time = int(input("매도감시횟수 (예: 10): "))
+    sell_time = int(input("매도감시횟수 (예: 60): "))
 
 def get_balance(ticker):
     try:
