@@ -19,18 +19,17 @@ count_50 = 50
 
 minute = "minute15"
 minute5 = "minute5"
-window = 20
 
 second=0.5
 
-trade_Quant=1_000_000
-add_trade_Quant=500_000
+trade_Quant=1_200_000
+add_trade_Quant=600_000
 bol_touch_time = 2
 min_rate = 0.6
 max_rate = 3.0
-profit_margin = -2
+profit_margin = -3.0
 min_krw = 50_000
-sell_time = 10
+sell_time = 20
 
 def send_discord_message(msg):
     """discord 메시지 전송"""
@@ -49,9 +48,9 @@ def get_user_input():
     bol_touch_time = int(input("볼린저 밴드 접촉 횟수 (예: 2): "))
     # min_rate = float(input("최소 수익률 (예: 0.6): "))
     max_rate = float(input("최대 수익률 (예: 3.0): "))
-    profit_margin = float(input("추가매수 감시 수익률 (예: -2.5): "))
+    profit_margin = float(input("추가매수 감시 수익률 (예: -3.0): "))
     # min_krw = float(input("최소 거래금액 (예: 50_000): "))
-    sell_time = int(input("매도감시횟수 (예: 60): "))
+    sell_time = int(input("매도감시횟수 (예: 20): "))
 
 def get_balance(ticker):
     try:
@@ -68,12 +67,12 @@ def get_balance(ticker):
         return 0
     return 0
 
-def get_ema(ticker, interval = minute, window=window):
+def get_ema(ticker, interval = minute):
     df = pyupbit.get_ohlcv(ticker, interval=interval, count=count_50)
     time.sleep(second)
 
     if df is not None and not df.empty:
-        df['ema'] = ta.trend.EMAIndicator(close=df['close'], window=window).ema_indicator()
+        df['ema'] = ta.trend.EMAIndicator(close=df['close'], window=20).ema_indicator()
         return df['ema'].iloc[-1]  # EMA의 마지막 값 반환
     
     else:
@@ -289,7 +288,7 @@ def trade_sell(ticker):
     current_price = pyupbit.get_current_price(ticker)
     profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
 
-    last_ema20 = get_ema(ticker, interval = minute, window = window)
+    last_ema20 = get_ema(ticker, interval = minute)
     
     stoch_Rsi = stoch_rsi(ticker, interval = minute5)
     srsi= stoch_Rsi['%K'].values
