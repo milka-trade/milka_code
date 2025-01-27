@@ -68,7 +68,7 @@ def get_balance(ticker):
     return 0
 
 def get_ema(ticker, interval = minute):
-    df = pyupbit.get_ohlcv(ticker, interval=interval, count=count_50)
+    df = pyupbit.get_ohlcv(ticker, interval=interval, count=count_200)
     time.sleep(second)
 
     if df is not None and not df.empty:
