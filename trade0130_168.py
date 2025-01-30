@@ -345,11 +345,12 @@ def send_profit_report():
                 ticker = f"KRW-{b['currency']}"
                 buyed_amount = float(b['balance'])
                 avg_buy_price = float(b['avg_buy_price'])
-                current_price = pyupbit.get_current_price(ticker)
+                cur_price = pyupbit.get_current_price(ticker)
                 
                 if buyed_amount > 0:
-                    profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
-                    report_message += f"[{b['currency']}] 수익률: {profit_rate:.1f}% \n"
+                    profit_rate = (cur_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
+                    holding_value = buyed_amount * cur_price if cur_price is not None else 0
+                    report_message += f"[{b['currency']}] 수익률: {profit_rate:.1f}% 보유금액: {holding_value:,.0f}원 \n"
 
             send_discord_message(report_message)
 
