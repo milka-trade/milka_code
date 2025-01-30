@@ -28,9 +28,9 @@ min_rate = 0.3
 max_rate = 3.0
 min_krw = 50_000
 sell_time = 20
-add_buy_time1 = 4  # 300_000 *  4 = 1_200_000
-add_buy_time2 = 7  # 300_000 *  7 = 2_100_000
-add_buy_time3 = 10 # 300_000 * 10 = 3_000_000
+add_buy_time1 = 3  # 300_000 * 3 =   900_000
+add_buy_time2 = 6  # 300_000 * 6 = 1_800_000
+add_buy_time3 = 9  # 300_000 * 9 = 2_700_000
 
 
 def send_discord_message(msg):
@@ -450,11 +450,11 @@ def additional_buy_logic():
                 srsi_buy = 0 <= srsi_k[1] < srsi_k[2] < 0.5
         
                 # 새로운 수익률 조건 추가
-                if holding_value <= add_buy_size * add_buy_time1 and profit_rate <= -0.3:
+                if holding_value <= add_buy_size * add_buy_time1 and profit_rate <= -0.6:
                     add_buy_cond = True
-                elif add_buy_size * add_buy_time1 < holding_value <= add_buy_size * add_buy_time2 and profit_rate <= -2:
+                elif add_buy_size * add_buy_time1 < holding_value <= add_buy_size * add_buy_time2 and profit_rate <= -1.5:
                     add_buy_cond = True
-                elif holding_value > add_buy_size * add_buy_time2 and profit_rate <= -3:
+                elif holding_value > add_buy_size * add_buy_time2 and profit_rate <= -3.0:
                     add_buy_cond = True
                 else:
                     add_buy_cond = False
