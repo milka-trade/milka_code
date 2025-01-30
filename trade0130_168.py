@@ -295,9 +295,9 @@ def trade_sell(ticker):
     bands_df_5 = get_bollinger_bands(ticker, interval= minute5)
     up_Bol_5 = bands_df_5['Upper_Band'].values
     srsi_sell = 0.8 < srsi[1] > srsi[2]
-    srsi_sell_m = srsi[1] > srsi[2] and 0.85 > srsi[2] 
+    # srsi_sell_m = srsi[1] > srsi[2] and 0.85 > srsi[2] 
     upper_price = profit_rate >= min_rate and current_price > up_Bol_5[len(up_Bol_5)-1] * 1.005 and srsi_sell
-    middle_price = profit_rate >= min_rate and current_price > last_ema20 and srsi_sell_m
+    middle_price = profit_rate >= min_rate and current_price > last_ema20 and srsi_sell
 
     max_attempts = sell_time  # 최대 조회 횟수
     attempts = 0  # 현재 조회 횟수
