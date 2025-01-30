@@ -15,7 +15,6 @@ DISCORD_WEBHOOK_URL = os.getenv("discord_webhhok")
 upbit = pyupbit.Upbit(os.getenv("UPBIT_ACCESS"), os.getenv("UPBIT_SECRET"))
 
 count_200 = 200
-count_50 = 50
 
 minute = "minute15"
 minute5 = "minute5"
@@ -27,9 +26,12 @@ add_trade_Quant=300_000
 bol_touch_time = 2
 min_rate = 0.3
 max_rate = 3.0
-# profit_margin = -2.0
 min_krw = 50_000
 sell_time = 20
+add_buy_time1 = 4  # 300_000 *  4 = 1_200_000
+add_buy_time2 = 7  # 300_000 *  7 = 2_100_000
+add_buy_time3 = 10 # 300_000 * 10 = 3_000_000
+
 
 def send_discord_message(msg):
     """discord 메시지 전송"""
@@ -41,15 +43,13 @@ def send_discord_message(msg):
         time.sleep(5) 
 
 def get_user_input():
-    global trade_Quant, add_trade_Quant, bol_touch_time, max_rate, sell_time
+    global trade_Quant, add_trade_Quant, bol_touch_time, min_rate, max_rate, sell_time
 
     trade_Quant = float(input("최대 단위 금액 (예: 500_000): "))
     add_trade_Quant = float(input("추가매수 금액 (예: 300_000): "))
     bol_touch_time = int(input("볼린저 밴드 접촉 횟수 (예: 2): "))
-    # min_rate = float(input("최소 수익률 (예: 0.6): "))
+    min_rate = float(input("최소 수익률 (예: 0.3): "))
     max_rate = float(input("최대 수익률 (예: 3.0): "))
-    # profit_margin = float(input("추가매수 감시 수익률 (예: -2.0): "))
-    # min_krw = float(input("최소 거래금액 (예: 50_000): "))
     sell_time = int(input("매도감시횟수 (예: 20): "))
 
 def get_balance(ticker):
@@ -230,7 +230,7 @@ def get_best_ticker():
 def trade_buy(ticker):
     
     krw = get_balance("KRW")
-    max_retries = 5  
+    max_retries = 3
     buy_size = min(trade_Quant, krw*0.9995)
     cur_price = pyupbit.get_current_price(ticker)
     
@@ -426,13 +426,13 @@ def additional_buy_logic():
                 profit_rate = (cur_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0 
                 holding_value = buyed_amount * cur_price if cur_price is not None else 0
             
-                df = pyupbit.get_ohlcv(ticker, interval=minute, count=4)
+                df = pyupbit.get_ohlcv(ticker, interval=minute5, count=4)
                 time.sleep(second)
                 df_close = df['close'].values
                 df_open = df['open'].values
                 df_low = df['low'].values
 
-                bands_df = get_bollinger_bands(ticker, interval= minute)
+                bands_df = get_bollinger_bands(ticker, interval= minute5)
                 lower_band = bands_df['Lower_Band'].values
                 
                 is_downing = all(lower_band[i] > lower_band[i + 1] for i in range(len(lower_band) - 1))
@@ -445,21 +445,21 @@ def additional_buy_logic():
                 last_df_close = df_close[len(df_close) - 1]
                 low_price = (last_df_open < last_df_close) and (cur_price < last_LBand * 1.01)
                                 
-                stoch_Rsi = stoch_rsi(ticker, interval = minute)
+                stoch_Rsi = stoch_rsi(ticker, interval = minute5)
                 srsi_k = stoch_Rsi['%K'].values
                 srsi_buy = 0 <= srsi_k[1] < srsi_k[2] < 0.5
         
                 # 새로운 수익률 조건 추가
-                if holding_value <= add_buy_size * 3 and profit_rate <= -0.5:
+                if holding_value <= add_buy_size * add_buy_time1 and profit_rate <= -0.3:
                     add_buy_cond = True
-                elif add_buy_size * 3 < holding_value <= add_buy_size * 7 and profit_rate <= -2:
+                elif add_buy_size * add_buy_time1 < holding_value <= add_buy_size * add_buy_time2 and profit_rate <= -2:
                     add_buy_cond = True
-                elif holding_value > add_buy_size * 7 and profit_rate <= -3:
+                elif holding_value > add_buy_size * add_buy_time2 and profit_rate <= -3:
                     add_buy_cond = True
                 else:
                     add_buy_cond = False
                 
-                if add_buy_cond and krw > min_krw and holding_value < add_buy_size * 10 :
+                if add_buy_cond and krw > min_krw and holding_value < add_buy_size * add_buy_time3 :
                     if is_downing and lower_boliinger and srsi_buy :
                         if low_price :
                             result = upbit.buy_market_order(ticker, add_buy_size)
