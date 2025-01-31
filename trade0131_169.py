@@ -489,8 +489,8 @@ def additional_buy_logic():
                                 send_discord_message(f"[추가 매수]: {ticker} / 수익률: {profit_rate:,.2f} / 현재가: {cur_price:,.1f} / 금액: {add_buy_size:,.0f}")
 
                         else:
-                            # print(f'[추가매수 미충족]: {ticker} / 수익률: {profit_rate:,.2f} / 현재가: {cur_price:,.1f}')
-                            send_discord_message(f'[추가매수 미충족]: {ticker} / 수익률: {profit_rate:,.2f} / 현재가: {cur_price:,.1f} / 볼린저하락: {is_downing} / 볼린저터치: {lower_boliinger} / srsi: {srsi_buy} / low_price:{low_price}')
+                            print(f'[추가매수 미충족]: {ticker} / 수익률: {profit_rate:,.2f}')
+                            # send_discord_message(f'[추가매수 미충족]: {ticker} / 수익률: {profit_rate:,.2f} / 현재가: {cur_price:,.1f} / 볼린저하락: {is_downing} / 볼린저터치: {lower_boliinger} / srsi: {srsi_buy} / low_price:{low_price}')
                             time.sleep(second)
             
         time.sleep(60)
