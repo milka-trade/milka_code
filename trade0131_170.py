@@ -28,7 +28,7 @@ min_rate = 0.3
 max_rate = 3.0
 min_krw = 50_000
 sell_time = 20
-bol_upper_time = 2
+# bol_upper_time = 2
 
 add_buy_rate1 = -0.6
 add_buy_quant1 = 1_000_000
@@ -49,11 +49,11 @@ def send_discord_message(msg):
         time.sleep(5) 
 
 def get_user_input():
-    global trade_Quant, bol_touch_time, bol_upper_time, min_rate, max_rate, sell_time
+    global trade_Quant, bol_touch_time, min_rate, max_rate, sell_time   #bol_upper_time, 
 
     trade_Quant = float(input("매수 금액 (예: 100_000): "))
     bol_touch_time = int(input("볼린저 밴드 하단 접촉 횟수 (예: 2): "))
-    bol_upper_time = int(input("볼린저 밴드 상단 접촉 횟수 (예: 2): "))
+    # bol_upper_time = int(input("볼린저 밴드 상단 접촉 횟수 (예: 2): "))
     min_rate = float(input("최소 수익률 (예: 0.6): "))
     max_rate = float(input("최대 수익률 (예: 3.0): "))
     sell_time = int(input("매도감시횟수 (예: 20): "))
@@ -308,8 +308,8 @@ def trade_sell(ticker):
     bands_df_5 = get_bollinger_bands(ticker, interval= minute5)
     up_Bol_5 = bands_df_5['Upper_Band'].values
 
-    count_upper_band = sum(1 for i in range(len(up_Bol_5)) if df_high[i] > up_Bol_5[i])
-    upper_boliinger = count_upper_band >= bol_upper_time
+    # count_upper_band = sum(1 for i in range(len(up_Bol_5)) if df_high[i] > up_Bol_5[i])
+    # upper_boliinger = count_upper_band >= bol_upper_time
 
     srsi_sell = 0.8 < srsi[1] > srsi[2]
     srsi_sell_m = 0.75 < srsi[1] > srsi[2] and 0.85 > srsi[2] 
@@ -325,10 +325,11 @@ def trade_sell(ticker):
             profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
             print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 수익률: {profit_rate:.2f}% / up_price : {upper_price}") 
                 
-            if profit_rate >= max_rate or (upper_boliinger and upper_price) :
+            # if profit_rate >= max_rate or (upper_boliinger and upper_price) :
+            if profit_rate >= max_rate or upper_price :
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
                 # print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f}% / 현재가: {current_price:,.1f} / \n UP_price: {upper_price} / srsi: {srsi_sell} {srsi[1]:,.2f} > {srsi[2]:,.2f} / 시도 {attempts + 1} / {max_attempts}")
-                send_discord_message(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f}% / up_Bol: {upper_boliinger} / UP_price: {upper_price} / srsi: {srsi_sell} {srsi[1]:,.2f} > {srsi[2]:,.2f} / 시도 {attempts + 1} / {max_attempts}")
+                send_discord_message(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f}% / UP_price: {upper_price} / srsi: {srsi_sell} {srsi[1]:,.2f} > {srsi[2]:,.2f} / 시도 {attempts + 1} / {max_attempts}")
                 return sell_order
 
             else:
