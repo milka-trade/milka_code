@@ -21,28 +21,23 @@ minute5 = "minute5"
 
 second=0.5
 
-trade_Quant = 500_000
-trade_buy_10 = 100_000
+trade_Quant = 100_000
+# trade_buy_10 = 100_000
 bol_touch_time = 2
 min_rate = 0.3
 max_rate = 3.0
 min_krw = 50_000
 sell_time = 20
+bol_upper_time = 2
 
 add_buy_rate1 = -0.6
-add_trade_Quant = 300_000
-add_buy_time1 = 3  # 300_000 * 3 = 900_000
+add_buy_quant1 = 1_000_000
 
 add_buy_rate2 = -1.5
-add_trade_Quant2 = 450_000
-add_buy_time2 = 2  # 900_000 + 450_000 * 2 = 1_800_000
+add_buy_quant2 = 2_000_000
 
 add_buy_rate3 = -3.0
-add_trade_Quant3 = 500_000
-# add_buy_time3 = 2  # 1_800_000 + 500_000 * 2 = 2_800_000
-
-add_buy_max = 5_000_000  # 추가매수 최대 금액 (3_500_000)
-
+add_buy_max    = 3_000_000
 
 def send_discord_message(msg):
     """discord 메시지 전송"""
@@ -54,10 +49,11 @@ def send_discord_message(msg):
         time.sleep(5) 
 
 def get_user_input():
-    global trade_buy_10, bol_touch_time, min_rate, max_rate, sell_time
+    global trade_Quant, bol_touch_time, bol_upper_time, min_rate, max_rate, sell_time
 
-    trade_buy_10 = float(input("매수 금액 (예: 100_000): "))
-    bol_touch_time = int(input("볼린저 밴드 접촉 횟수 (예: 2): "))
+    trade_Quant = float(input("매수 금액 (예: 100_000): "))
+    bol_touch_time = int(input("볼린저 밴드 하단 접촉 횟수 (예: 2): "))
+    bol_upper_time = int(input("볼린저 밴드 상단 접촉 횟수 (예: 2): "))
     min_rate = float(input("최소 수익률 (예: 0.6): "))
     max_rate = float(input("최대 수익률 (예: 3.0): "))
     sell_time = int(input("매도감시횟수 (예: 20): "))
@@ -138,7 +134,7 @@ def get_bollinger_bands(ticker, interval = minute5, window=20, std_dev=2):
         'Lower_Band': lower_band
     })
 
-    return bands_df.tail(4)
+    return bands_df.tail(3)
 
 def filtered_tickers(tickers):
     """특정 조건에 맞는 티커 필터링"""
@@ -146,7 +142,7 @@ def filtered_tickers(tickers):
     
     for t in tickers:
         try:
-            df = pyupbit.get_ohlcv(t, interval=minute5, count=4)
+            df = pyupbit.get_ohlcv(t, interval=minute5, count=3)
             if df is None:
                 print(f"[filter_tickers] 데이터를 가져올 수 없습니다. {t}")
                 send_discord_message(f"[filter_tickers] 데이터를 가져올 수 없습니다: {t}")
@@ -166,7 +162,7 @@ def filtered_tickers(tickers):
             # (조건 2) 볼린저 밴드의 하단값과 종가를 비교하여, 종가가 하단값 이하인 경우가 n번 이상 발생하는지 확인
             count_below_lower_band = sum(1 for i in range(len(lower_band)) if df_low[i] < lower_band[i])
             lower_boliinger = count_below_lower_band >= bol_touch_time
-            srsi_buy = 0 <= srsi_k[1] < srsi_k[2] < 0.5
+            srsi_buy = 0 <= srsi_k[1] < srsi_k[2] < 0.4
            
             # print(f'[미선정] {t} 볼린저 하락: {is_downing} / 볼린저 터치: {lower_boliinger} / srsi: {srsi_buy} {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
             if is_downing :
@@ -241,12 +237,12 @@ def trade_buy(ticker):
     
     krw = get_balance("KRW")
     max_retries = 3
-    buy_size = min(trade_buy_10, krw*0.9995)
+    buy_size = min(trade_Quant, krw*0.9995)
     cur_price = pyupbit.get_current_price(ticker)
     
     attempt = 0 
     
-    df = pyupbit.get_ohlcv(ticker, interval=minute5, count=4)
+    df = pyupbit.get_ohlcv(ticker, interval=minute5, count=3)
     time.sleep(second)            
     df_close = df['close'].values
     df_open = df['open'].values
@@ -290,6 +286,10 @@ def trade_buy(ticker):
             
 def trade_sell(ticker):
 
+    df = pyupbit.get_ohlcv(ticker, interval=minute5, count=3)
+    time.sleep(1)
+    df_high = df['high'].values            
+
     currency = ticker.split("-")[1]
     buyed_amount = get_balance(currency)
     
@@ -307,8 +307,12 @@ def trade_sell(ticker):
 
     bands_df_5 = get_bollinger_bands(ticker, interval= minute5)
     up_Bol_5 = bands_df_5['Upper_Band'].values
+
+    count_upper_band = sum(1 for i in range(len(up_Bol_5)) if df_high[i] > up_Bol_5[i])
+    upper_boliinger = count_upper_band >= bol_upper_time
+
     srsi_sell = 0.8 < srsi[1] > srsi[2]
-    srsi_sell_m = 0.75 < srsi[1] > srsi[2] and 0.8 > srsi[2] 
+    srsi_sell_m = 0.75 < srsi[1] > srsi[2] and 0.85 > srsi[2] 
     upper_price = profit_rate >= min_rate and current_price > up_Bol_5[len(up_Bol_5)-1] and srsi_sell
     middle_price = profit_rate >= min_rate and current_price > last_ema20 and srsi_sell_m
 
@@ -321,10 +325,10 @@ def trade_sell(ticker):
             profit_rate = (current_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
             print(f"[{ticker}] / [매도시도 {attempts + 1} / {max_attempts}] / 수익률: {profit_rate:.2f}% / up_price : {upper_price}") 
                 
-            if profit_rate >= max_rate or upper_price :
+            if profit_rate >= max_rate or (upper_boliinger and upper_price) :
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
                 # print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f}% / 현재가: {current_price:,.1f} / \n UP_price: {upper_price} / srsi: {srsi_sell} {srsi[1]:,.2f} > {srsi[2]:,.2f} / 시도 {attempts + 1} / {max_attempts}")
-                send_discord_message(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f}% / \n UP_price: {upper_price} / srsim: {srsi_sell_m} {srsi[1]:,.2f} > {srsi[2]:,.2f} / 시도 {attempts + 1} / {max_attempts}")
+                send_discord_message(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f}% / up_Bol: {upper_boliinger} / UP_price: {upper_price} / srsi: {srsi_sell} {srsi[1]:,.2f} > {srsi[2]:,.2f} / 시도 {attempts + 1} / {max_attempts}")
                 return sell_order
 
             else:
@@ -334,7 +338,7 @@ def trade_sell(ticker):
         if middle_price :
             sell_order = upbit.sell_market_order(ticker, buyed_amount)
             # print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.1f}% / middle_price: {middle_price} / srsi: {srsi_sell} {srsi[1]:,.2f} > {srsi[2]:,.2f}")
-            send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% / middle_price: {middle_price} / srsi: {srsi_sell} {srsi[1]:,.2f} > {srsi[2]:,.2f}")
+            send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% / middle_price: {middle_price} / srsim: {srsi_sell_m} {srsi[1]:,.2f} > {srsi[2]:,.2f}")
             return sell_order   
         else:
             return None
@@ -427,11 +431,7 @@ def additional_buy_logic():
     while True:
         balances = upbit.get_balances()
         krw = get_balance("KRW")
-        # add_buy_size = min(add_trade_Quant, krw*0.9995)
-        add_buy_size1 = min(add_trade_Quant, krw * 0.9995)
-        add_buy_size2 = min(add_trade_Quant2, krw * 0.9995)
-        add_buy_size3 = min(add_trade_Quant3, krw * 0.9995)
-        add_buy_10 = min(trade_buy_10, krw * 0.9995)
+        add_Quant = min(trade_Quant, krw * 0.9995)
         
         for b in balances:
             if b['currency'] not in ["KRW", "QI", "ONX", "ETHF", "ETHW", "PURSE"]:  # 특정 통화 제외
@@ -444,7 +444,7 @@ def additional_buy_logic():
                 profit_rate = (cur_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0 
                 holding_value = buyed_amount * cur_price if cur_price is not None else 0
             
-                df = pyupbit.get_ohlcv(ticker, interval=minute5, count=4)
+                df = pyupbit.get_ohlcv(ticker, interval=minute5, count=3)
                 time.sleep(second)
                 df_close = df['close'].values
                 df_open = df['open'].values
@@ -461,44 +461,41 @@ def additional_buy_logic():
                 last_LBand = lower_band[len(lower_band) - 1]
                 last_df_open = df_open[len(df_open) - 1]
                 last_df_close = df_close[len(df_close) - 1]
-                low_price = (last_df_open < last_df_close) and (cur_price < last_LBand * 1.01)
+                low_price = (cur_price < last_LBand * 0.975) or (last_df_open < last_df_close and cur_price < last_LBand * 1.01)
                                 
                 stoch_Rsi = stoch_rsi(ticker, interval = minute5)
                 srsi_k = stoch_Rsi['%K'].values
-                srsi_buy = 0 <= srsi_k[1] < srsi_k[2] < 0.5
+                srsi_buy = 0 < srsi_k[1] < srsi_k[2] < 0.3
 
-                add_buy_quant1 = add_buy_size1 * add_buy_time1  #300_000 * 3 = 900_000
-                add_buy_quant2 = add_buy_quant1 + (add_buy_size2 * add_buy_time2)  #900_000 + 450_000 * 2 = 1_800_000
                 # add_buy_quant3 = add_buy_quant2 + (add_buy_size3 * add_buy_time3)  #1_800_000 + 500_000 * 2 = 2_800_000
                 # 새로운 수익률 조건 추가
                 if (holding_value <= add_buy_quant1) and (profit_rate <= add_buy_rate1):
-                    add_buy_size = add_buy_size1
-                    # add_buy_cond = True
+                    # add_buy_size = add_Quant
+                    add_buy_cond = True
                 elif (add_buy_quant1 < holding_value <= add_buy_quant2) and (profit_rate <= add_buy_rate2):
-                    # add_buy_cond = True
-                    add_buy_size = add_buy_size2
+                    add_buy_cond = True
+                    # add_buy_size = add_Quant
                 elif (add_buy_quant2 < holding_value <= add_buy_max) and (profit_rate <= add_buy_rate3):
-                    # add_buy_cond = True
-                    add_buy_size = add_buy_size3
+                    add_buy_cond = True
+                    # add_buy_size = 3
                 else:
-                    # add_buy_cond = False
-                    add_buy_size = 0
+                    add_buy_cond = False
+                    # add_buy_size = 0
                 
-                if add_buy_size > 0 and krw > min_krw :
+                if add_buy_cond and krw > min_krw :
                     if is_downing and lower_boliinger and srsi_buy :
                         if low_price :
-                            result = upbit.buy_market_order(ticker, add_buy_10)
+                            result = upbit.buy_market_order(ticker, add_Quant)
 
                             if result:
+                                time.sleep(60)
                                 # print(f"추가 매수: {ticker} / 수익률: {profit_rate:,.2f} / 금액: {add_buy_size:,.0f}")
-                                send_discord_message(f"[추가 매수]: {ticker} / 수익률: {profit_rate:,.2f} / 현재가: {cur_price:,.1f} / 금액: {add_buy_10:,.0f}")
+                                send_discord_message(f"[추가 매수]: {ticker} / 수익률: {profit_rate:,.2f} / 현재가: {cur_price:,.1f} / 금액: {add_Quant:,.0f}")
 
                         else:
                             print(f'[추가매수 미충족]: {ticker} / 수익률: {profit_rate:,.2f}')
                             # send_discord_message(f'[추가매수 미충족]: {ticker} / 수익률: {profit_rate:,.2f} / 현재가: {cur_price:,.1f} / 볼린저하락: {is_downing} / 볼린저터치: {lower_boliinger} / srsi: {srsi_buy} / low_price:{low_price}')
-                            time.sleep(second)
-            
-        time.sleep(60)
+                            time.sleep(10)
 
 # 매도 쓰레드 생성
 selling_thread = threading.Thread(target=selling_logic)
