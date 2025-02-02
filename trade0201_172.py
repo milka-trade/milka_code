@@ -294,10 +294,10 @@ def trade_sell(ticker):
 
     last_ema20 = get_ema(ticker, interval = minute)
     
-    stoch_Rsi = stoch_rsi(ticker, interval = minute)
+    stoch_Rsi = stoch_rsi(ticker, interval = minute5)
     srsi= stoch_Rsi['%K'].values
 
-    bands_df = get_bollinger_bands(ticker, interval= minute)
+    bands_df = get_bollinger_bands(ticker, interval= minute5)
     up_Bol = bands_df['Upper_Band'].values
 
     df = pyupbit.get_ohlcv(ticker, interval=minute, count=3)
@@ -307,11 +307,11 @@ def trade_sell(ticker):
     count_upper_band = sum(1 for i in range(len(up_Bol)) if df_close[i] > up_Bol[i])
     upper_boliinger = count_upper_band >= bol_upper_time
 
-    # srsi_sell = 0.8 < srsi[1] > srsi[2]
+    srsi_sell = 0.8 < srsi[1] > srsi[2]
     srsi_sell_m = 0.75 < srsi[1] > srsi[2] and 0.9 > srsi[2] 
     
-    upper_price = profit_rate >= min_rate and cur_price > up_Bol[len(up_Bol)-1] and srsi_sell_m
-    middle_price = profit_rate >= min_rate and cur_price > last_ema20 and srsi_sell_m
+    upper_price = profit_rate >= min_rate and cur_price > up_Bol[len(up_Bol)-1] and srsi_sell
+    middle_price = profit_rate >= min_rate and cur_price > last_ema20 and srsi_sell
     cut_cond = upper_boliinger and srsi_sell_m 
 
     max_attempts = sell_time
@@ -327,7 +327,7 @@ def trade_sell(ticker):
             if profit_rate >= max_rate or upper_price :
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
                 # print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f}% / 현재가: {current_price:,.1f} / \n UP_price: {upper_price} / srsi: {srsi_sell} {srsi[1]:,.2f} > {srsi[2]:,.2f} / 시도 {attempts + 1} / {max_attempts}")
-                send_discord_message(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f}% / UP_price: {upper_price} / srsim: {srsi_sell_m} {srsi[1]:,.2f} > {srsi[2]:,.2f} / 시도 {attempts + 1} / {max_attempts}")
+                send_discord_message(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f}% / UP_price: {upper_price} / srsi: {srsi_sell} {srsi[1]:,.2f} > {srsi[2]:,.2f} / 시도 {attempts + 1} / {max_attempts}")
                 return sell_order
 
             else:
@@ -337,7 +337,7 @@ def trade_sell(ticker):
         if middle_price :
             sell_order = upbit.sell_market_order(ticker, buyed_amount)
             # print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.1f}% / middle_price: {middle_price} / srsi: {srsi_sell} {srsi[1]:,.2f} > {srsi[2]:,.2f}")
-            send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% / middle_price: {middle_price} / srsim: {srsi_sell_m} {srsi[1]:,.2f} > {srsi[2]:,.2f}")
+            send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% / middle_price: {middle_price} / srsi: {srsi_sell} {srsi[1]:,.2f} > {srsi[2]:,.2f}")
             return sell_order   
         else:
             return None
@@ -347,7 +347,8 @@ def trade_sell(ticker):
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
                 send_discord_message(f"[손절조건 도달]: [{ticker}] 수익률: {profit_rate:.2f}% / 보유금액: {holding_value:,.0f} /bol_up_tocuh: {upper_boliinger} / srsim: {srsi_sell_m} {srsi[1]:,.2f} > {srsi[2]:,.2f}")
             else:
-                print(f"[손절조건 미도달]: [{ticker}] 수익률: {profit_rate:.2f}% / 보유금액: {holding_value:,.0f} /bol_up_tocuh: {upper_boliinger} / srsim: {srsi_sell_m} {srsi[1]:,.2f} > {srsi[2]:,.2f}")
+                # print(f"[손절조건 미도달]: [{ticker}] 수익률: {profit_rate:.2f}% / 보유금액: {holding_value:,.0f} /bol_up_tocuh: {upper_boliinger} / srsim: {srsi_sell_m} {srsi[1]:,.2f} > {srsi[2]:,.2f}")
+                # time.sleep(5)
                 return None  
         else:
             return None  
@@ -499,7 +500,7 @@ def additional_buy_logic():
                             else:
                                 print(f'[추가매수 미충족]: {ticker} / 수익률: {profit_rate:,.2f}')
                                 # send_discord_message(f'[추가매수 미충족]: {ticker} / 수익률: {profit_rate:,.2f} / 현재가: {cur_price:,.1f} / 볼린저하락: {is_downing} / 볼린저터치: {lower_boliinger} / srsi: {srsi_buy} / low_price:{low_price}')
-                                time.sleep(10)
+                                time.sleep(60)
 
         except (KeyError, ValueError) as e:
             print(f"add_buy_logic / 에러 발생: {e}")
