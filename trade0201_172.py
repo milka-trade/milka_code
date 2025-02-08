@@ -75,6 +75,7 @@ def get_balance(ticker):
 
 def get_ema(ticker, interval = minute):
     df = pyupbit.get_ohlcv(ticker, interval=interval, count=count_200)
+    # print(df)
     time.sleep(second)
 
     if df is not None and not df.empty:
@@ -86,6 +87,7 @@ def get_ema(ticker, interval = minute):
 
 def stoch_rsi(ticker, interval = minute):
     df = pyupbit.get_ohlcv(ticker, interval=interval, count=count_200)
+    # print(df)
     time.sleep(second)
      
     rsi = ta.momentum.RSIIndicator(df['close'], window=14).rsi()
@@ -119,6 +121,7 @@ def stoch_rsi(ticker, interval = minute):
 def get_bollinger_bands(ticker, interval = minute, window=20, std_dev=2):
     """특정 티커의 볼린저 밴드 상단 및 하단값을 가져오는 함수"""
     df = pyupbit.get_ohlcv(ticker, interval=interval, count=count_200)
+    # print(df)
     time.sleep(second)
     if df is None or df.empty:
         return None  # 데이터가 없으면 None 반환
@@ -143,12 +146,19 @@ def filtered_tickers(tickers):
     for t in tickers:
         try:
             df = pyupbit.get_ohlcv(t, interval=minute, count=3)
+            # print(df)
             if df is None:
                 print(f"[filter_tickers] 데이터를 가져올 수 없습니다. {t}")
                 send_discord_message(f"[filter_tickers] 데이터를 가져올 수 없습니다: {t}")
                 continue  # 다음 티커로 넘어감
-            time.sleep(1)            
+            time.sleep(1)
+            
+            df_open = df['open'].values            
             df_low = df['low'].values
+            df_close = df['close'].values
+
+            last_df_open = df_open[len(df_open) - 1]
+            last_df_close = df_close[len(df_close) - 1]
 
             bands_df = get_bollinger_bands(t, interval= minute)
             lower_band = bands_df['Lower_Band'].values
@@ -156,20 +166,27 @@ def filtered_tickers(tickers):
             stoch_Rsi = stoch_rsi(t, interval = minute)
             srsi_k = stoch_Rsi['%K'].values
 
-            # (조건 1)볼린저 밴드 하단값이 4시계열 연속 하락하고 상하단 폭이 2%이상 유지하는지 확인
+            filiter_time = datetime.now().strftime('%m/%d %H:%M:%S')  
+            print(f'[{filiter_time}] {t} df_low:{df_low} / lower_band:{lower_band} / srsi:{srsi_k}')
+            # print(bands_df)
+            # print(stoch_Rsi)
+
+
+            # (조건 1)볼린저 밴드 하단값이 3시계열 연속 하락
             is_downing = all(lower_band[i] > lower_band[i + 1] for i in range(len(lower_band) - 1))
             
             # (조건 2) 볼린저 밴드의 하단값과 종가를 비교하여, 종가가 하단값 이하인 경우가 n번 이상 발생하는지 확인
             count_below_lower_band = sum(1 for i in range(len(lower_band)) if df_low[i] < lower_band[i])
             lower_boliinger = count_below_lower_band >= bol_touch_time
+            upper_candle = last_df_open < last_df_close
             srsi_buy = 0 <= srsi_k[1] < srsi_k[2] < 0.4
            
-            # print(f'[미선정] {t} 볼린저 하락: {is_downing} / 볼린저 터치: {lower_boliinger} / srsi: {srsi_buy} {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
+            print(f'[test] {t} 볼린저 하락:{is_downing} / 볼린저 터치:{lower_boliinger} / 양봉:{upper_candle} / srsi: {srsi_buy} {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
             if is_downing :
                 # print(f'[미선정] {t} 볼린저 하락: {is_downing} / 볼린저 터치: {lower_boliinger} / srsi: {srsi_buy} {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
                 
-                if lower_boliinger and srsi_buy :
-                    print(f'{t} 볼린저 하락:{is_downing} / 볼린저 터치:{lower_boliinger} / srsi: {srsi_buy} {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
+                if lower_boliinger and upper_candle and srsi_buy :
+                    print(f'{t} 볼린저 하락:{is_downing} / 볼린저 터치:{lower_boliinger} / 양봉:{upper_candle} / srsi: {srsi_buy} {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
                     # send_discord_message(f'{t} 볼린저 하락:{is_downing} / 볼린저 터치:{lower_boliinger} / srsi: {srsi_buy} {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
                     filtered_tickers.append(t)
                     
@@ -236,23 +253,23 @@ def get_best_ticker():
 def trade_buy(ticker):
     
     krw = get_balance("KRW")
-    max_retries = 3
+    max_retries = 300
     buy_size = min(trade_Quant, krw*0.9995)
     cur_price = pyupbit.get_current_price(ticker)
     
     attempt = 0 
     
-    df = pyupbit.get_ohlcv(ticker, interval=minute, count=3)
-    time.sleep(second)            
-    df_close = df['close'].values
-    df_open = df['open'].values
+    # df = pyupbit.get_ohlcv(ticker, interval=minute, count=3)
+    # time.sleep(second)            
+    # df_close = df['close'].values
+    # df_open = df['open'].values
     
     bands_df = get_bollinger_bands(ticker, interval = minute)
     lower_band = bands_df['Lower_Band'].values
-    last_df_open = df_open[len(df_open) - 1]
-    last_df_close = df_close[len(df_close) - 1]
+    # last_df_open = df_open[len(df_open) - 1]
+    # last_df_close = df_close[len(df_close) - 1]
 
-    low_price = (last_df_open < last_df_close) and (cur_price < lower_band[len(lower_band) - 1] * 1.005)
+    low_price = (cur_price < lower_band[len(lower_band) - 1] * 1.005)  #(last_df_open < last_df_close) and
     
     if krw >= min_krw :
         
@@ -298,10 +315,10 @@ def trade_sell(ticker):
     stoch_Rsi = stoch_rsi(ticker, interval = minute)
     srsi= stoch_Rsi['%K'].values
 
-    bands_df = get_bollinger_bands(ticker, interval= minute)
+    bands_df = get_bollinger_bands(ticker, interval = minute)
     up_Bol = bands_df['Upper_Band'].values
 
-    df = pyupbit.get_ohlcv(ticker, interval=minute, count=3)
+    df = pyupbit.get_ohlcv(ticker, interval = minute, count = 3)
     time.sleep(second)
     df_close = df['close'].values
 
@@ -358,7 +375,7 @@ def send_profit_report():
     while True:
         try:
             now = datetime.now()  # 현재 시간을 루프 시작 시마다 업데이트 (try 루프안에 있어야 실시간 업데이트 주의)
-            next_hour = (now + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)   # 다음 정시 시간을 계산 (현재 시간의 분, 초를 0으로 만들어 정시로 맞춤)
+            next_hour = (now + timedelta(hours = 1)).replace(minute = 0, second = 0, microsecond = 0)   # 다음 정시 시간을 계산 (현재 시간의 분, 초를 0으로 만들어 정시로 맞춤)
             time_until_next_hour = (next_hour - now).total_seconds()
             time.sleep(time_until_next_hour)    # 다음 정시까지 기다림
 
@@ -455,13 +472,13 @@ def additional_buy_logic():
                     profit_rate = (cur_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0 
                     holding_value = buyed_amount * cur_price if cur_price is not None else 0
                 
-                    df = pyupbit.get_ohlcv(ticker, interval=minute, count=3)
+                    df = pyupbit.get_ohlcv(ticker, interval = minute, count = 3)
                     time.sleep(second)
                     df_close = df['close'].values
                     df_open = df['open'].values
                     df_low = df['low'].values
 
-                    bands_df = get_bollinger_bands(ticker, interval= minute)
+                    bands_df = get_bollinger_bands(ticker, interval = minute)
                     lower_band = bands_df['Lower_Band'].values
                     
                     is_downing = all(lower_band[i] > lower_band[i + 1] for i in range(len(lower_band) - 1))
@@ -499,7 +516,7 @@ def additional_buy_logic():
                                     send_discord_message(f"[추가 매수]: {ticker} / 수익률: {profit_rate:,.2f} / 현재가: {cur_price:,.1f} / 금액: {add_Quant:,.0f}")
 
                             else:
-                                print(f'[추가매수 미충족]: {ticker} / 수익률: {profit_rate:,.2f}')
+                                # print(f'[추가매수 미충족]: {ticker} / 수익률: {profit_rate:,.2f}')
                                 # send_discord_message(f'[추가매수 미충족]: {ticker} / 수익률: {profit_rate:,.2f} / 현재가: {cur_price:,.1f} / 볼린저하락: {is_downing} / 볼린저터치: {lower_boliinger} / srsi: {srsi_buy} / low_price:{low_price}')
                                 time.sleep(60)
 
@@ -509,13 +526,13 @@ def additional_buy_logic():
             time.sleep(5)  # 오류 발생 시 대기 후 재시작
 
 # 매도 쓰레드 생성
-selling_thread = threading.Thread(target=selling_logic)
+selling_thread = threading.Thread(target = selling_logic)
 selling_thread.start()
 
 # 매수 쓰레드 생성
-buying_thread = threading.Thread(target=buying_logic)
+buying_thread = threading.Thread(target = buying_logic)
 buying_thread.start()
 
 # # 추가 매수 쓰레드 생성
-additional_buy_thread = threading.Thread(target=additional_buy_logic)
+additional_buy_thread = threading.Thread(target = additional_buy_logic)
 additional_buy_thread.start()
