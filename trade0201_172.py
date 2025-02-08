@@ -28,16 +28,16 @@ max_rate = 3.0
 min_krw = 50_000
 sell_time = 20
 bol_upper_time = 3
-# cut_rate = -5.0
+cut_rate = -5.0
 
-add_buy_rate1 = -0.6
-add_buy_quant1 = 1_000_000
+add_buy_rate1 = -1.0
+add_buy_quant1 = 500_000
 
-add_buy_rate2 = -1.5
-add_buy_quant2 = 2_000_000
+add_buy_rate2 = -2.0
+add_buy_quant2 = 1_000_000
 
 add_buy_rate3 = -3.0
-add_buy_max    = 3_000_000
+add_buy_max    = 2_000_000
 
 def send_discord_message(msg):
     """discord 메시지 전송"""
@@ -49,10 +49,11 @@ def send_discord_message(msg):
         time.sleep(5) 
 
 def get_user_input():
-    global trade_Quant, bol_touch_time, min_rate, max_rate, sell_time   #bol_upper_time, 
+    global trade_Quant, bol_touch_time, bol_upper_time, min_rate, max_rate, sell_time 
 
     trade_Quant = float(input("매수 금액 (예: 100_000): "))
-    bol_touch_time = int(input("볼린저 밴드 하단 접촉 횟수 (예: 2): "))
+    bol_touch_time = int(input("볼린저 밴드 하단 접촉 횟수 (예: 3): "))
+    bol_upper_time = int(input("볼린저 밴드 상단 접촉 횟수 (예: 2): "))
     min_rate = float(input("최소 수익률 (예: 0.6): "))
     max_rate = float(input("최대 수익률 (예: 3.0): "))
     sell_time = int(input("매도감시횟수 (예: 20): "))
@@ -179,7 +180,7 @@ def filtered_tickers(tickers):
     return filtered_tickers
 
 def get_best_ticker():
-    selected_tickers = ["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-SOL", "KRW-ADA", "KRW-XLM", "KRW-DOGE", "KRW-HBAR"]
+    selected_tickers = ["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-SOL", "KRW-ADA"] #, "KRW-HBAR", "KRW-XLM", "KRW-DOGE"
     balances = upbit.get_balances()
     held_coins = []
 
@@ -251,7 +252,7 @@ def trade_buy(ticker):
     last_df_open = df_open[len(df_open) - 1]
     last_df_close = df_close[len(df_close) - 1]
 
-    low_price = (last_df_open < last_df_close) and (cur_price < lower_band[len(lower_band) - 1] * 1.01)
+    low_price = (last_df_open < last_df_close) and (cur_price < lower_band[len(lower_band) - 1] * 1.005)
     
     if krw >= min_krw :
         
@@ -304,15 +305,15 @@ def trade_sell(ticker):
     time.sleep(second)
     df_close = df['close'].values
 
-    count_upper_band = sum(1 for i in range(len(up_Bol)) if df_close[i] > up_Bol[i])
-    upper_boliinger = count_upper_band >= bol_upper_time
-
     srsi_sell = 0.8 < srsi[1] > srsi[2]
-    srsi_sell_m = 0.75 < srsi[1] > srsi[2] and 0.9 > srsi[2] 
+    srsi_sell_m = 0.8 < srsi[1] > srsi[2] and 0.95 > srsi[2]
+
+    count_upper_band = sum(1 for i in range(len(up_Bol)) if df_close[i] > up_Bol[i])
+    upper_boliinger = count_upper_band >= bol_upper_time and srsi_sell_m
     
-    upper_price = profit_rate >= min_rate and cur_price > up_Bol[len(up_Bol)-1] and srsi_sell
-    middle_price = profit_rate >= min_rate and cur_price > last_ema20 and srsi_sell
-    cut_cond = upper_boliinger and srsi_sell_m 
+    upper_price = profit_rate >= min_rate and upper_boliinger
+    middle_price = profit_rate >= min_rate and cur_price > last_ema20 and srsi_sell_m
+    cut_cond = upper_boliinger  #profit_rate < cut_rate or
 
     max_attempts = sell_time
     attempts = 0
@@ -327,7 +328,7 @@ def trade_sell(ticker):
             if profit_rate >= max_rate or upper_price :
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
                 # print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f}% / 현재가: {current_price:,.1f} / \n UP_price: {upper_price} / srsi: {srsi_sell} {srsi[1]:,.2f} > {srsi[2]:,.2f} / 시도 {attempts + 1} / {max_attempts}")
-                send_discord_message(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f}% / UP_price: {upper_price} / srsi: {srsi_sell} {srsi[1]:,.2f} > {srsi[2]:,.2f} / 시도 {attempts + 1} / {max_attempts}")
+                send_discord_message(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f}% / UP_price: {upper_price} / srsi {srsi[1]:,.2f} > {srsi[2]:,.2f} / 시도 {attempts + 1} / {max_attempts}")
                 return sell_order
 
             else:
@@ -337,13 +338,13 @@ def trade_sell(ticker):
         if middle_price :
             sell_order = upbit.sell_market_order(ticker, buyed_amount)
             # print(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.1f}% / middle_price: {middle_price} / srsi: {srsi_sell} {srsi[1]:,.2f} > {srsi[2]:,.2f}")
-            send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% / middle_price: {middle_price} / srsi: {srsi_sell} {srsi[1]:,.2f} > {srsi[2]:,.2f}")
+            send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% / middle_price: {middle_price} / srsim: {srsi_sell_m} {srsi[1]:,.2f} > {srsi[2]:,.2f}")
             return sell_order   
         else:
             return None
     else:
         if add_buy_max * 0.95 < holding_value :            
-            if cut_cond :
+            if cut_cond:
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
                 send_discord_message(f"[손절조건 도달]: [{ticker}] 수익률: {profit_rate:.2f}% / 보유금액: {holding_value:,.0f} /bol_up_tocuh: {upper_boliinger} / srsim: {srsi_sell_m} {srsi[1]:,.2f} > {srsi[2]:,.2f}")
             else:
@@ -376,7 +377,7 @@ def send_profit_report():
                 if buyed_amount > 0:
                     profit_rate = (cur_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
                     holding_value = buyed_amount * cur_price if cur_price is not None else 0
-                    report_message += f"[{b['currency']}] 수익률: {profit_rate:.2f}% / 보유금액: {holding_value:,.0f}원 \n"
+                    report_message += f"[{b['currency']}] 수익률: {profit_rate:.2f}% / 현재가: {cur_price:,.2f} / 보유금액: {holding_value:,.0f}원 \n"
 
             send_discord_message(report_message)
 
@@ -471,7 +472,7 @@ def additional_buy_logic():
                     last_LBand = lower_band[len(lower_band) - 1]
                     last_df_open = df_open[len(df_open) - 1]
                     last_df_close = df_close[len(df_close) - 1]
-                    low_price = (cur_price < last_LBand * 0.975) or (last_df_open < last_df_close and cur_price < last_LBand * 1.01)
+                    low_price = (cur_price < last_LBand * 0.95) or (last_df_open < last_df_close and cur_price < last_LBand * 1.005)
                                     
                     stoch_Rsi = stoch_rsi(ticker, interval = minute)
                     srsi_k = stoch_Rsi['%K'].values
