@@ -36,7 +36,7 @@ add_buy_quant1 = 500_000
 add_buy_rate2 = -2.0
 add_buy_quant2 = 1_000_000
 
-add_buy_rate3 = -3.0
+add_buy_rate3 = -4.0
 add_buy_max    = 2_000_000
 
 def send_discord_message(msg):
@@ -55,8 +55,8 @@ def get_user_input():
     bol_touch_time = int(input("볼린저 밴드 하단 접촉 횟수 (예: 3): "))
     bol_upper_time = int(input("볼린저 밴드 상단 접촉 횟수 (예: 2): "))
     min_rate = float(input("최소 수익률 (예: 0.6): "))
-    max_rate = float(input("최대 수익률 (예: 3.0): "))
-    sell_time = int(input("매도감시횟수 (예: 20): "))
+    max_rate = float(input("최대 수익률 (예: 5.0): "))
+    sell_time = int(input("매도감시횟수 (예: 30): "))
 
 def get_balance(ticker):
     try:
