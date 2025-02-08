@@ -306,7 +306,7 @@ def trade_sell(ticker):
     df_close = df['close'].values
 
     srsi_sell = 0.8 < srsi[1] > srsi[2]
-    srsi_sell_m = 0.8 < srsi[1] > srsi[2] and 0.95 > srsi[2]
+    srsi_sell_m = 0.7 < srsi[1] > srsi[2] and 0.95 > srsi[2]
 
     count_upper_band = sum(1 for i in range(len(up_Bol)) if df_close[i] > up_Bol[i])
     upper_boliinger = count_upper_band >= bol_upper_time and srsi_sell_m
@@ -348,7 +348,7 @@ def trade_sell(ticker):
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
                 send_discord_message(f"[손절조건 도달]: [{ticker}] 수익률: {profit_rate:.2f}% / 보유금액: {holding_value:,.0f} /bol_up_tocuh: {upper_boliinger} / srsim: {srsi_sell_m} {srsi[1]:,.2f} > {srsi[2]:,.2f}")
             else:
-                # print(f"[손절조건 미도달]: [{ticker}] 수익률: {profit_rate:.2f}% / 보유금액: {holding_value:,.0f} /bol_up_tocuh: {upper_boliinger} / srsim: {srsi_sell_m} {srsi[1]:,.2f} > {srsi[2]:,.2f}")
+                # print(f"[손절조건 미도달]: [{ticker}] 수익률: {profit_rate:.2f}% / 보유금액: {holding_value:,.0f} /cut_cond: {cut_cond} / srsim: {srsi[1]:,.2f} > {srsi[2]:,.2f}")
                 # time.sleep(5)
                 return None  
         else:
