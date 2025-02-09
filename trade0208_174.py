@@ -17,7 +17,7 @@ upbit = pyupbit.Upbit(os.getenv("UPBIT_ACCESS"), os.getenv("UPBIT_SECRET"))
 count_200 = 200
 
 minute = "minute15"
-minute5 = "minute5"
+# minute5 = "minute5"
 
 second=1.0
 
@@ -177,7 +177,7 @@ def filtered_tickers(tickers):
             upper_candle = last_df_open < last_df_close
             srsi_buy = 0 <= srsi_k[1] < srsi_k[2] < 0.3
            
-            print(f'[test] {t} 볼린저 확대:{is_increasing} / 볼린저 터치:{lower_boliinger} / 양봉:{upper_candle} / srsi: {srsi_buy} {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
+            # print(f'[test] {t} 볼린저 확대:{is_increasing} / 볼린저 터치:{lower_boliinger} / 양봉:{upper_candle} / srsi: {srsi_buy} {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
             if is_increasing :
                 # print(f'[미선정] {t} 볼린저 하락: {is_downing} / 볼린저 터치: {lower_boliinger} / srsi: {srsi_buy} {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
                 
@@ -324,7 +324,7 @@ def trade_sell(ticker):
     band_diff = upper_band - lower_band
     is_increasing = all(band_diff[i] < band_diff[i + 1] for i in range(len(band_diff) - 1))
     
-    stoch_Rsi = stoch_rsi(ticker, interval = minute5)
+    stoch_Rsi = stoch_rsi(ticker, interval = minute)
     srsi = stoch_Rsi['%K'].values
 
     bands_df = get_bollinger_bands(ticker, interval = minute)
@@ -335,14 +335,14 @@ def trade_sell(ticker):
     time.sleep(second)
     df_close = df['close'].values
 
-    srsi_sell_5 = 0.7 < srsi[1] > srsi[2] and 0.95 > srsi[2]
+    srsi_sell = 0.7 < srsi[1] > srsi[2] and 0.95 > srsi[2]
     # srsi_sell_m = 0.7 < srsi[1] > srsi[2] and 0.95 > srsi[2]
 
-    count_upper_band = sum(1 for i in range(len(up_Bol)) * 1.002 if df_close[i] > up_Bol[i])
-    upper_boliinger = count_upper_band >= bol_upper_time and srsi_sell_5
+    count_upper_band = sum(1 for i in range(len(up_Bol)) if df_close[i] > up_Bol[i] * 1.005)
+    upper_boliinger = count_upper_band >= bol_upper_time and srsi_sell
 
     upper_price = profit_rate >= min_rate and is_increasing and pre_ema < last_ema and upper_boliinger
-    middle_price = profit_rate >= min_rate and cur_price > last_ema * 1.005 and srsi_sell_5
+    middle_price = profit_rate >= min_rate and cur_price > last_ema * 1.005 and srsi_sell
 
     max_attempts = sell_time
     attempts = 0
