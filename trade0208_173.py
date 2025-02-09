@@ -80,7 +80,7 @@ def get_ema(ticker, interval = minute):
 
     if df is not None and not df.empty:
         df['ema'] = ta.trend.EMAIndicator(close=df['close'], window=20).ema_indicator()
-        return df['ema'].iloc[-1]  # EMA의 마지막 값 반환
+        return df['ema'].tail(2)  # EMA의 마지막 값 반환
     
     else:
         return 0  # 데이터가 없으면 0 반환
@@ -154,7 +154,7 @@ def filtered_tickers(tickers):
             time.sleep(1)
             
             df_open = df['open'].values            
-            # df_low = df['low'].values
+            df_low = df['low'].values
             df_close = df['close'].values
 
             last_df_open = df_open[len(df_open) - 1]
@@ -168,17 +168,17 @@ def filtered_tickers(tickers):
             stoch_Rsi = stoch_rsi(t, interval = minute)
             srsi_k = stoch_Rsi['%K'].values
 
-            filiter_time = datetime.now().strftime('%m/%d %H:%M:%S')  
+            # filiter_time = datetime.now().strftime('%m/%d %H:%M:%S')  
             # print(f'[{filiter_time}] {t} df_close:{df_close} / lower_band:{lower_band} / srsi:{srsi_k}')
             
             # is_downing = all(lower_band[i] > lower_band[i + 1] for i in range(len(lower_band) - 1))
             is_increasing = all(band_diff[i] < band_diff[i + 1] for i in range(len(band_diff) - 1))
-            count_below_lower_band = sum(1 for i in range(len(lower_band)) if df_close[i] < lower_band[i])
+            count_below_lower_band = sum(1 for i in range(len(lower_band)) if df_low[i] < lower_band[i])
             lower_boliinger = count_below_lower_band >= bol_touch_time
             upper_candle = last_df_open < last_df_close
             srsi_buy = 0 <= srsi_k[1] < srsi_k[2] < 0.3
            
-            # print(f'[test] {t} 볼린저 확대:{is_increasing} / 볼린저 터치:{lower_boliinger} / 양봉:{upper_candle} / srsi: {srsi_buy} {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
+            print(f'[test] {t} 볼린저 확대:{is_increasing} / 볼린저 터치:{lower_boliinger} / 양봉:{upper_candle} / srsi: {srsi_buy} {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
             if is_increasing :
                 # print(f'[미선정] {t} 볼린저 하락: {is_downing} / 볼린저 터치: {lower_boliinger} / srsi: {srsi_buy} {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
                 
@@ -213,21 +213,22 @@ def get_best_ticker():
         filtering_tickers = []
 
         for ticker in all_tickers:
-            if ticker not in held_coins and ticker not in excluded_tickers or ticker in selected_tickers :
+            if ticker not in excluded_tickers or ticker in selected_tickers :
+                if ticker not in held_coins : 
                 
-                df_week = pyupbit.get_ohlcv(ticker, interval="week", count=1)
-                time.sleep(0.5)
-                week_price = df_week['open'].iloc[0]
-                
-                df_day = pyupbit.get_ohlcv(ticker, interval="day", count=1)
-                time.sleep(0.5)
-                day_price = df_day['open'].iloc[0]
-                day_value = df_day['value'].iloc[0]
-                
-                cur_price = pyupbit.get_current_price(ticker)
+                    df_week = pyupbit.get_ohlcv(ticker, interval="week", count=1)
+                    time.sleep(0.5)
+                    week_price = df_week['open'].iloc[0]
+                    
+                    df_day = pyupbit.get_ohlcv(ticker, interval="day", count=1)
+                    time.sleep(0.5)
+                    day_price = df_day['open'].iloc[0]
+                    day_value = df_day['value'].iloc[0]
+                    
+                    cur_price = pyupbit.get_current_price(ticker)
 
-                if day_value >= krw_sol_day_value and cur_price < week_price * 1.3 and cur_price < day_price * 1.05:
-                    filtering_tickers.append(ticker)
+                    if day_value >= krw_sol_day_value and cur_price < week_price * 1.3 and cur_price < day_price * 1.05:
+                        filtering_tickers.append(ticker)
 
     except (KeyError, ValueError) as e:
         send_discord_message(f"get_best_ticker/티커 조회 중 오류 발생: {e}")
@@ -322,13 +323,21 @@ def trade_sell(ticker):
     profit_rate = (cur_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
     holding_value = buyed_amount * cur_price if cur_price is not None else 0
 
-    last_ema20 = get_ema(ticker, interval = minute)
+    last_ema = get_ema(ticker, interval = minute).iloc[1]
+    pre_ema = get_ema(ticker, interval = minute).iloc[0]
+
+    bands_df = get_bollinger_bands(ticker, interval = minute)
+    upper_band = bands_df['Upper_Band'].values
+    lower_band = bands_df['Lower_Band'].values
+    band_diff = upper_band - lower_band
+    is_increasing = all(band_diff[i] < band_diff[i + 1] for i in range(len(band_diff) - 1))
     
     stoch_Rsi = stoch_rsi(ticker, interval = minute)
     srsi= stoch_Rsi['%K'].values
 
     bands_df = get_bollinger_bands(ticker, interval = minute)
     up_Bol = bands_df['Upper_Band'].values
+    
 
     df = pyupbit.get_ohlcv(ticker, interval = minute, count = 3)
     time.sleep(second)
@@ -341,8 +350,8 @@ def trade_sell(ticker):
     upper_boliinger = count_upper_band >= bol_upper_time and srsi_sell_m
     
     upper_price = profit_rate >= min_rate and upper_boliinger
-    middle_price = profit_rate >= min_rate and cur_price > last_ema20 and srsi_sell_m
-    cut_cond = count_upper_band >= 1 and srsi_sell  #profit_rate < cut_rate or
+    middle_price = profit_rate >= min_rate and cur_price > last_ema and srsi_sell_m
+    cut_cond = is_increasing  and pre_ema < last_ema and count_upper_band >= 1 and srsi_sell  #profit_rate < cut_rate or
 
     max_attempts = sell_time
     attempts = 0
@@ -456,7 +465,7 @@ def buying_logic():
                     else:
                         time.sleep(120)
                 else:
-                    time.sleep(300)
+                    time.sleep(120)
 
             else:
                 time.sleep(600)
