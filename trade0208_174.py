@@ -343,7 +343,7 @@ def trade_sell(ticker):
 
     upper_price = profit_rate >= min_rate and is_increasing and pre_ema < last_ema and upper_boliinger
     middle_price = profit_rate >= min_rate and cur_price > last_ema * 1.005 and srsi_sell
-    cut_price = upper_price and srsi_sell
+    cut_price = profit_rate < cut_rate or (is_increasing and pre_ema < last_ema and upper_boliinger) 
 
 
     max_attempts = sell_time
@@ -374,7 +374,7 @@ def trade_sell(ticker):
             return None
     else:
         if add_buy_max * 0.95 < holding_value:
-            if profit_rate < cut_rate or cut_price:
+            if cut_price:
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
                 send_discord_message(f"[손절조건 도달]: [{ticker}] 수익률: {profit_rate:.2f}% / 현재가: {cur_price:,.1f} / 보유금액: {holding_value:,.0f}  \n upper_price: {upper_price} / srsi5: {srsi[1]:,.2f} > {srsi[2]:,.2f}")
             else:
