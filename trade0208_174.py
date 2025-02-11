@@ -29,10 +29,11 @@ max_rate = 5.0
 min_krw = 50_000
 sell_time = 20
 bol_upper_time = 1
+up_bol_rate = 1.0025
 cut_rate = -5.0
 
 add_buy_rate1  = -1.0
-add_buy_quant1 = 500_000
+add_buy_quant1 = 600_000
 
 add_buy_rate2  = -2.0
 add_buy_max    = 1_500_000
@@ -193,8 +194,8 @@ def filtered_tickers(tickers):
     return filtered_tickers
 
 def get_best_ticker():
-    selected_tickers = ["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-SOL", "KRW-ADA"] #, "KRW-HBAR", "KRW-XLM", "KRW-DOGE"
-    excluded_tickers = ["KRW-QI", "KRW-ONX", "KRW-ETHF", "KRW-ETHW", "KRW-PURSE", "KRW-USDT", "KRW-BERA", "KRW-VTHO", "KRW-SBD", "KRW-JTO", "KRW-SCR", "KRW-VIRTUAL", "KRW-SOLVE", "KRW-IOST"]  # 제외할 코인 리스트
+    selected_tickers = ["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-SOL", "KRW-ADA", "KRW-HBAR", "KRW-XLM", "KRW-DOGE"] 
+    # excluded_tickers = ["KRW-QI", "KRW-ONX", "KRW-ETHF", "KRW-ETHW", "KRW-PURSE", "KRW-USDT", "KRW-BERA", "KRW-VTHO", "KRW-SBD", "KRW-JTO", "KRW-SCR", "KRW-VIRTUAL", "KRW-SOLVE", "KRW-IOST"]  # 제외할 코인 리스트
     balances = upbit.get_balances()
     held_coins = []
 
@@ -204,16 +205,17 @@ def get_best_ticker():
             held_coins.append(ticker)  # "KRW-코인명" 형태로 추가
     
     try:
-        df_sol = pyupbit.get_ohlcv('KRW-SOL', interval="day", count=1)
-        time.sleep(0.1)
-        krw_sol_day_value = df_sol['value'].iloc[0]  # KRW-SOL의 당일 거래량
+        # df_sol = pyupbit.get_ohlcv('KRW-SOL', interval="day", count=1)
+        # time.sleep(0.1)
+        # krw_sol_day_value = df_sol['value'].iloc[0]  # KRW-SOL의 당일 거래량
 
         all_tickers = pyupbit.get_tickers(fiat="KRW")
         filtering_tickers = []
 
         for ticker in all_tickers:
-            if ticker not in excluded_tickers or ticker in selected_tickers :
-                if ticker not in held_coins : 
+            if ticker in selected_tickers and ticker not in held_coins:
+            # if ticker not in excluded_tickers or ticker in selected_tickers :
+                # if ticker not in held_coins : 
                 
                     df_week = pyupbit.get_ohlcv(ticker, interval="week", count=1)
                     time.sleep(second)
@@ -222,11 +224,12 @@ def get_best_ticker():
                     df_day = pyupbit.get_ohlcv(ticker, interval="day", count=1)
                     time.sleep(second)
                     day_price = df_day['open'].iloc[0]
-                    day_value = df_day['value'].iloc[0]
+                    # day_value = df_day['value'].iloc[0]
                     
                     cur_price = pyupbit.get_current_price(ticker)
 
-                    if day_value >= krw_sol_day_value and cur_price < week_price * 1.3 and cur_price < day_price * 1.05:
+                    # if day_value >= krw_sol_day_value and 
+                    if cur_price < week_price * 1.3 and cur_price < day_price * 1.05:
                         filtering_tickers.append(ticker)
 
     except (KeyError, ValueError) as e:
@@ -338,7 +341,7 @@ def trade_sell(ticker):
     srsi_sell = 0.7 < srsi[1] > srsi[2] and 0.95 > srsi[2]
     # srsi_sell_m = 0.7 < srsi[1] > srsi[2] and 0.95 > srsi[2]
 
-    count_upper_band = sum(1 for i in range(len(up_Bol)) if df_close[i] > up_Bol[i] * 1.005)
+    count_upper_band = sum(1 for i in range(len(up_Bol)) if df_close[i] > up_Bol[i] * up_bol_rate)  #1.0025
     upper_boliinger = count_upper_band >= bol_upper_time
 
     upper_price = profit_rate >= min_rate and is_increasing and pre_ema < last_ema and upper_boliinger
