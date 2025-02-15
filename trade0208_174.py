@@ -21,22 +21,22 @@ minute = "minute15"
 
 second=1.0
 
-trade_Quant = 500_000
+trade_Quant = 1_000_000
 bol_touch_time = 2
 bol_touch_time_add = 3
-min_rate = 0.3
+min_rate = 0.6
 max_rate = 5.0
 min_krw = 50_000
 sell_time = 20
 bol_upper_time = 1
-up_bol_rate = 1.0025
+up_bol_rate = 1.003
 cut_rate = -5.0
 
-add_buy_rate1  = -1.0
-add_buy_quant1 = 600_000
+add_buy_rate1  = -4.0
+add_buy_quant1 = 1_000_000
 
-add_buy_rate2  = -2.0
-add_buy_max    = 1_500_000
+# add_buy_rate2  = -2.0
+add_buy_max    = 2_000_000
 
 
 def send_discord_message(msg):
@@ -51,12 +51,12 @@ def send_discord_message(msg):
 def get_user_input():
     global trade_Quant, bol_touch_time, bol_upper_time, min_rate, max_rate, sell_time 
 
-    trade_Quant = float(input("매수 금액 (예: 500_000): "))
+    trade_Quant = float(input("매수 금액 (예: 1_000_000): "))
     bol_touch_time = int(input("볼린저 밴드 하단 접촉 횟수 (예: 2): "))
     bol_upper_time = int(input("볼린저 밴드 상단 접촉 횟수 (예: 1): "))
     min_rate = float(input("최소 수익률 (예: 0.6): "))
     max_rate = float(input("최대 수익률 (예: 5.0): "))
-    sell_time = int(input("매도감시횟수 (예: 20): "))
+    sell_time = int(input("매도감시횟수 (예: 10): "))
 
 def get_balance(ticker):
     try:
@@ -238,9 +238,11 @@ def get_best_ticker():
         time.sleep(second)  # API 호출 제한을 위한 대기
         return None
 
-    filtered_time = datetime.now().strftime('%m/%d %H:%M:%S')  # 시작시간 기록
+    
     filtered_list = filtered_tickers(filtering_tickers)
-    send_discord_message(f"{filtered_time} [{filtered_list}]")
+    if len(filtered_list) > 0 :
+        filtered_time = datetime.now().strftime('%m/%d %H:%M:%S')  # 시작시간 기록
+        send_discord_message(f"{filtered_time} [{filtered_list}]")
     
     # 티커가 1개인 경우 바로 반환
     if len(filtered_list) == 1:
@@ -371,9 +373,10 @@ def trade_sell(ticker):
             
         if middle_price:
             sell_order = upbit.sell_market_order(ticker, buyed_amount)
-            send_discord_message(f"[매도시도 초과]: [{ticker}] 수익률: {profit_rate:.2f}% / 현재가: {cur_price:,.1f} \n middle_price: {middle_price} / srsi5: {srsi[1]:,.2f} > {srsi[2]:,.2f}")
+            send_discord_message(f"[m_price 도달!]: [{ticker}] 수익률: {profit_rate:.2f}% / 현재가: {cur_price:,.1f} / srsi5: {srsi[1]:,.2f} > {srsi[2]:,.2f}")
             return sell_order   
         else:
+            print(f"[m_price 미도달]: [{ticker}] 수익률: {profit_rate:.2f}% / 현재가: {cur_price:,.1f} / srsi5: {srsi[1]:,.2f} > {srsi[2]:,.2f}")
             return None
     else:
         if add_buy_max * 0.95 < holding_value:
@@ -507,7 +510,7 @@ def additional_buy_logic():
                     last_LBand = lower_band[len(lower_band) - 1]
                     last_df_open = df_open[len(df_open) - 1]
                     last_df_close = df_close[len(df_close) - 1]
-                    low_price = last_df_open < last_df_close and last_LBand < cur_price < last_LBand * 1.01
+                    low_price = last_df_open < last_df_close and last_LBand < cur_price < last_LBand * 1.005
                                     
                     stoch_Rsi = stoch_rsi(ticker, interval = minute)
                     srsi_k = stoch_Rsi['%K'].values
@@ -516,8 +519,8 @@ def additional_buy_logic():
                     # 새로운 수익률 조건 추가
                     if (holding_value < add_buy_quant1) and (profit_rate <= add_buy_rate1):    #평가금액이 50만원 미만이고 수익률이 -1프로 이하일때 추가매수
                         add_buy_cond = True
-                    elif (add_buy_quant1 < holding_value <= add_buy_max) and (profit_rate <= add_buy_rate2):  #평가금액이 50만원 초과이고 수익률이 -2프로 이하일때 추가매수
-                        add_buy_cond = True
+                    # elif (add_buy_quant1 < holding_value <= add_buy_max) and (profit_rate <= add_buy_rate2):  #평가금액이 50만원 초과이고 수익률이 -2프로 이하일때 추가매수
+                    #     add_buy_cond = True
                     else:
                         add_buy_cond = False
                     
