@@ -25,7 +25,7 @@ trade_Quant = 1_000_000
 bol_touch_time = 2
 bol_touch_time_add = 3
 min_rate = 0.6
-max_rate = 5.0
+max_rate = 3.5
 min_krw = 50_000
 sell_time = 20
 bol_upper_time = 1
@@ -55,8 +55,8 @@ def get_user_input():
     bol_touch_time = int(input("볼린저 밴드 하단 접촉 횟수 (예: 2): "))
     bol_upper_time = int(input("볼린저 밴드 상단 접촉 횟수 (예: 1): "))
     min_rate = float(input("최소 수익률 (예: 0.6): "))
-    max_rate = float(input("최대 수익률 (예: 5.0): "))
-    sell_time = int(input("매도감시횟수 (예: 10): "))
+    max_rate = float(input("최대 수익률 (예: 3.5): "))
+    sell_time = int(input("매도감시횟수 (예: 20): "))
 
 def get_balance(ticker):
     try:
@@ -347,7 +347,7 @@ def trade_sell(ticker):
     upper_boliinger = count_upper_band >= bol_upper_time
 
     upper_price = profit_rate >= min_rate and is_increasing and pre_ema < last_ema and upper_boliinger
-    middle_price = profit_rate >= min_rate and cur_price > last_ema * 1.005 and srsi_sell
+    middle_price = profit_rate >= min_rate and cur_price > last_ema  and srsi_sell
     cut_price = profit_rate < cut_rate or (is_increasing and pre_ema < last_ema and upper_boliinger) 
 
 
@@ -363,7 +363,7 @@ def trade_sell(ticker):
             # if profit_rate >= max_rate or (upper_boliinger and upper_price) :
             if profit_rate >= max_rate or upper_price :
                 sell_order = upbit.sell_market_order(ticker, buyed_amount)
-                # print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f}% / 현재가: {current_price:,.1f} / \n UP_price: {upper_price} / srsi: {srsi_sell} {srsi[1]:,.2f} > {srsi[2]:,.2f} / 시도 {attempts + 1} / {max_attempts}")
+                print(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f}%  / 현재가: {cur_price:,.1f} \n upper_price: {upper_price} / srsi5 {srsi[1]:,.2f} > {srsi[2]:,.2f} / 시도 {attempts + 1} / {max_attempts}")
                 send_discord_message(f"[!!목표가 달성!!]: [{ticker}] / 수익률: {profit_rate:.2f}%  / 현재가: {cur_price:,.1f} \n upper_price: {upper_price} / srsi5 {srsi[1]:,.2f} > {srsi[2]:,.2f} / 시도 {attempts + 1} / {max_attempts}")
                 return sell_order
 
@@ -373,6 +373,7 @@ def trade_sell(ticker):
             
         if middle_price:
             sell_order = upbit.sell_market_order(ticker, buyed_amount)
+            print(f"[m_price 도달!]: [{ticker}] 수익률: {profit_rate:.2f}% / 현재가: {cur_price:,.1f} / srsi5: {srsi[1]:,.2f} > {srsi[2]:,.2f}")
             send_discord_message(f"[m_price 도달!]: [{ticker}] 수익률: {profit_rate:.2f}% / 현재가: {cur_price:,.1f} / srsi5: {srsi[1]:,.2f} > {srsi[2]:,.2f}")
             return sell_order   
         else:
