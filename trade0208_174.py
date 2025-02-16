@@ -25,11 +25,11 @@ trade_Quant = 1_000_000
 bol_touch_time = 2
 bol_touch_time_add = 3
 min_rate = 0.6
-max_rate = 3.5
+max_rate = 2.5
 min_krw = 50_000
 sell_time = 20
 bol_upper_time = 1
-up_bol_rate = 1.003
+up_bol_rate = 1.0015
 cut_rate = -5.0
 
 add_buy_rate1  = -4.0
@@ -49,14 +49,15 @@ def send_discord_message(msg):
         time.sleep(5) 
 
 def get_user_input():
-    global trade_Quant, bol_touch_time, bol_upper_time, min_rate, max_rate, sell_time 
+    global trade_Quant, bol_touch_time, bol_upper_time, min_rate, max_rate, sell_time, up_bol_rate
 
     trade_Quant = float(input("매수 금액 (예: 1_000_000): "))
     bol_touch_time = int(input("볼린저 밴드 하단 접촉 횟수 (예: 2): "))
     bol_upper_time = int(input("볼린저 밴드 상단 접촉 횟수 (예: 1): "))
     min_rate = float(input("최소 수익률 (예: 0.6): "))
-    max_rate = float(input("최대 수익률 (예: 3.5): "))
+    max_rate = float(input("최대 수익률 (예: 2.5): "))
     sell_time = int(input("매도감시횟수 (예: 20): "))
+    up_bol_rate = float(input("볼밴상단초과율 (예: 1.0015): "))
 
 def get_balance(ticker):
     try:
@@ -373,11 +374,12 @@ def trade_sell(ticker):
             
         if middle_price:
             sell_order = upbit.sell_market_order(ticker, buyed_amount)
-            print(f"[m_price 도달!]: [{ticker}] 수익률: {profit_rate:.2f}% / 현재가: {cur_price:,.1f} / srsi5: {srsi[1]:,.2f} > {srsi[2]:,.2f}")
+            print(f"[m_price 도달]: [{ticker}] 수익률: {profit_rate:.2f}% / 현재가: {cur_price:,.1f} / srsi5: {srsi[1]:,.2f} > {srsi[2]:,.2f}")
             send_discord_message(f"[m_price 도달!]: [{ticker}] 수익률: {profit_rate:.2f}% / 현재가: {cur_price:,.1f} / srsi5: {srsi[1]:,.2f} > {srsi[2]:,.2f}")
             return sell_order   
         else:
-            print(f"[m_price 미도달]: [{ticker}] 수익률: {profit_rate:.2f}% / 현재가: {cur_price:,.1f} / srsi5: {srsi[1]:,.2f} > {srsi[2]:,.2f}")
+            mprice_time = datetime.now().strftime('%m/%d %H:%M:%S')
+            print(f"[m_price 미도달]: [{mprice_time}][{ticker}] 수익률: {profit_rate:.2f}% / 현재가: {cur_price:,.1f} / srsi5: {srsi[1]:,.2f} > {srsi[2]:,.2f}")
             return None
     else:
         if add_buy_max * 0.95 < holding_value:
