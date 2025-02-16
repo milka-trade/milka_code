@@ -17,7 +17,7 @@ upbit = pyupbit.Upbit(os.getenv("UPBIT_ACCESS"), os.getenv("UPBIT_SECRET"))
 count_200 = 200
 
 minute = "minute15"
-# minute5 = "minute5"
+minute5 = "minute5"
 
 second=1.0
 
@@ -330,7 +330,7 @@ def trade_sell(ticker):
     band_diff = upper_band - lower_band
     is_increasing = all(band_diff[i] < band_diff[i + 1] for i in range(len(band_diff) - 1))
     
-    stoch_Rsi = stoch_rsi(ticker, interval = minute)
+    stoch_Rsi = stoch_rsi(ticker, interval = minute5)
     srsi = stoch_Rsi['%K'].values
 
     bands_df = get_bollinger_bands(ticker, interval = minute)
