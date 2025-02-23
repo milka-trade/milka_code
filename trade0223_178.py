@@ -22,7 +22,7 @@ minute = "minute15"
 second=1.0
 
 trade_Quant = 1_000_000
-bol_touch_time = 2
+# bol_touch_time = 2
 # bol_touch_time_add = 3
 min_rate = 0.6
 max_rate = 2.5
@@ -30,7 +30,7 @@ min_krw = 50_000
 sell_time = 20
 bol_upper_time = 1
 up_bol_rate = 1.003
-cut_rate = -3.0
+cut_rate = -4.0
 
 # add_buy_rate1  = -4.0
 # add_buy_quant1 = 1_000_000
@@ -49,10 +49,10 @@ def send_discord_message(msg):
         time.sleep(5) 
 
 def get_user_input():
-    global trade_Quant, bol_touch_time, bol_upper_time, min_rate, max_rate, sell_time, up_bol_rate
+    global trade_Quant, bol_upper_time, min_rate, max_rate, sell_time, up_bol_rate
 
     trade_Quant = float(input("매수 금액 (예: 1_000_000): "))
-    bol_touch_time = int(input("볼린저 밴드 하단 접촉 횟수 (예: 2): "))
+    # bol_touch_time = int(input("볼린저 밴드 하단 접촉 횟수 (예: 2): "))
     bol_upper_time = int(input("볼린저 밴드 상단 접촉 횟수 (예: 1): "))
     min_rate = float(input("최소 수익률 (예: 0.5): "))
     max_rate = float(input("최대 수익률 (예: 2.5): "))
@@ -181,8 +181,9 @@ def filtered_tickers(tickers):
             # lower_boliinger = count_below_lower_band >= bol_touch_time and decreasing # and upper_candle
             srsi_buy = 0 < srsi_k[1] < srsi_k[2] and 0.25 < srsi_k[2] < 0.4
            
+            # print(f'[test] {t} 볼린저 확대: {is_increasing} / 볼린저 하향:{is_downing} / 볼린저 기울기 완만:{decreasing}')
             if is_increasing and is_downing and decreasing:
-                print(f'{t} 볼린저 확대: {is_increasing} / 볼린저 하향:{is_downing} / 볼린저 기울기 완만:{decreasing}')
+                # print(f'{t} 볼린저 확대: {is_increasing} / 볼린저 하향:{is_downing} / 볼린저 기울기 완만:{decreasing}')
                 # if lower_boliinger:
                     # print(f'{t} 볼린저 터치:{lower_boliinger} / 볼린저 기울기 완만:{decreasing} / 양봉:{upper_candle}')
                 if srsi_buy :
