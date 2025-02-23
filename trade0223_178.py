@@ -49,10 +49,10 @@ def send_discord_message(msg):
         time.sleep(5) 
 
 def get_user_input():
-    global trade_Quant, bol_touch_time, bol_upper_time, min_rate, max_rate, sell_time, up_bol_rate
+    global trade_Quant, bol_upper_time, min_rate, max_rate, sell_time, up_bol_rate  #bol_touch_time,
 
     trade_Quant = float(input("매수 금액 (예: 1_000_000): "))
-    bol_touch_time = int(input("볼린저 밴드 하단 접촉 횟수 (예: 2): "))
+    # bol_touch_time = int(input("볼린저 밴드 하단 접촉 횟수 (예: 2): "))
     bol_upper_time = int(input("볼린저 밴드 상단 접촉 횟수 (예: 1): "))
     min_rate = float(input("최소 수익률 (예: 0.5): "))
     max_rate = float(input("최대 수익률 (예: 2.5): "))
