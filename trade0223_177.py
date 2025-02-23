@@ -182,9 +182,11 @@ def filtered_tickers(tickers):
             srsi_buy = 0 < srsi_k[1] < srsi_k[2] and 0.25 < srsi_k[2] < 0.4
            
             if is_increasing and is_downing:
+                print(f'{t} 볼린저 확대: {is_increasing} / 볼린저 하향:{is_downing}')
                 if lower_boliinger:
+                    print(f'{t} 볼린저 터치:{lower_boliinger} / 볼린저 기울기 완만:{decreasing} / 양봉:{upper_candle}')
                     if srsi_buy :
-                        print(f'{t} 볼린저 하향:{is_downing} / 볼린저 터치:{lower_boliinger} / 볼린저 기울기 완만:{decreasing} 양봉:{upper_candle} / srsi: {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
+                        print(f'{t} srsi: {srsi_k[1]:,.2f} < {srsi_k[2]:,.2f}')
                         filtered_tickers.append(t)
                     
         except (KeyError, ValueError) as e:
@@ -266,7 +268,7 @@ def trade_buy(ticker):
 
     stoch_Rsi = stoch_rsi(ticker, interval = minute)
     srsi_k = stoch_Rsi['%K'].values
-    srsi_buy = 0 < srsi_k[1] < srsi_k[2] and 0.25 < srsi_k[2] < 0.4
+    srsi_buy = 0.25 < srsi_k[2] < 0.4
     
     if krw >= min_krw :
         
