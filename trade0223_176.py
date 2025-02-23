@@ -169,7 +169,7 @@ def filtered_tickers(tickers):
             slopes = np.diff(lower_band)
             # increasing = all(slopes[i] < slopes[i + 1] for i in range(len(slopes) - 1))
 
-            stoch_Rsi = stoch_rsi(t, interval = minute)
+            stoch_Rsi = stoch_rsi(t, interval = minute5)
             srsi_k = stoch_Rsi['%K'].values
 
             # is_increasing = all(band_diff[i] < band_diff[i + 1] for i in range(len(band_diff) - 1))
@@ -518,7 +518,7 @@ def additional_buy_logic():
                     upper_candle = last_df_open < last_df_close
                     lower_boliinger = count_below_lower_band >= bol_touch_time and decreasing and upper_candle
                                     
-                    stoch_Rsi = stoch_rsi(ticker, interval = minute)
+                    stoch_Rsi = stoch_rsi(ticker, interval = minute5)
                     srsi_k = stoch_Rsi['%K'].values
                     srsi_buy = 0 <= srsi_k[1] < srsi_k[2] and 0.25 < srsi_k[2] < 0.4
 
