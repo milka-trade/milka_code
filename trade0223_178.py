@@ -49,10 +49,10 @@ def send_discord_message(msg):
         time.sleep(5) 
 
 def get_user_input():
-    global trade_Quant, bol_upper_time, min_rate, max_rate, sell_time, up_bol_rate  #bol_touch_time,
+    global trade_Quant, bol_touch_time, bol_upper_time, min_rate, max_rate, sell_time, up_bol_rate
 
     trade_Quant = float(input("매수 금액 (예: 1_000_000): "))
-    # bol_touch_time = int(input("볼린저 밴드 하단 접촉 횟수 (예: 2): "))
+    bol_touch_time = int(input("볼린저 밴드 하단 접촉 횟수 (예: 2): "))
     bol_upper_time = int(input("볼린저 밴드 상단 접촉 횟수 (예: 1): "))
     min_rate = float(input("최소 수익률 (예: 0.5): "))
     max_rate = float(input("최대 수익률 (예: 2.5): "))
@@ -138,7 +138,7 @@ def get_bollinger_bands(ticker, interval = minute, window=20, std_dev=2):
         'Lower_Band': lower_band
     })
 
-    return bands_df.tail(6)
+    return bands_df.tail(3)
 
 def filtered_tickers(tickers):
     """특정 조건에 맞는 티커 필터링"""
@@ -499,7 +499,7 @@ def buying_logic():
 #                     profit_rate = (cur_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0
 #                     holding_value = buyed_amount * cur_price if cur_price is not None else 0
                 
-#                     df = pyupbit.get_ohlcv(ticker, interval = minute, count = 4)
+#                     df = pyupbit.get_ohlcv(ticker, interval = minute, count = 3)
 #                     time.sleep(second)
 #                     df_close = df['close'].values
 #                     df_open = df['open'].values
