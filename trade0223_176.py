@@ -23,7 +23,7 @@ second=1.0
 
 trade_Quant = 1_000_000
 bol_touch_time = 2
-bol_touch_time_add = 3
+# bol_touch_time_add = 3
 min_rate = 0.6
 max_rate = 2.5
 min_krw = 50_000
@@ -54,10 +54,10 @@ def get_user_input():
     trade_Quant = float(input("매수 금액 (예: 1_000_000): "))
     bol_touch_time = int(input("볼린저 밴드 하단 접촉 횟수 (예: 2): "))
     bol_upper_time = int(input("볼린저 밴드 상단 접촉 횟수 (예: 1): "))
-    min_rate = float(input("최소 수익률 (예: 0.6): "))
+    min_rate = float(input("최소 수익률 (예: 0.5): "))
     max_rate = float(input("최대 수익률 (예: 2.5): "))
     sell_time = int(input("매도감시횟수 (예: 20): "))
-    up_bol_rate = float(input("볼밴상단초과율 (예: 1.0015): "))
+    up_bol_rate = float(input("볼밴상단초과율 (예: 1.003): "))
 
 def get_balance(ticker):
     try:
