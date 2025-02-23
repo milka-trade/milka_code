@@ -508,15 +508,15 @@ def additional_buy_logic():
                     is_downing = all(lower_band[i] > lower_band[i + 1] for i in range(len(lower_band) - 1))
                     decreasing = all(slopes[i] > slopes[i + 1] for i in range(len(slopes) - 1))
 
-                    count_below_lower_band = sum(1 for i in range(len(lower_band)) if df_close[i] < lower_band[i])
-                    # lower_boliinger = count_below_lower_band >= bol_touch_time_add
-                    upper_candle = last_df_open < last_df_close
-                    lower_boliinger = count_below_lower_band >= bol_touch_time and decreasing and upper_candle
-
                     # last_LBand = lower_band[len(lower_band) - 1]
                     last_df_open = df_open[len(df_open) - 1]
                     last_df_close = df_close[len(df_close) - 1]
                     # low_price = upper_candle and last_LBand < cur_price < last_LBand * 1.005
+                    
+                    count_below_lower_band = sum(1 for i in range(len(lower_band)) if df_close[i] < lower_band[i])
+                    # lower_boliinger = count_below_lower_band >= bol_touch_time_add
+                    upper_candle = last_df_open < last_df_close
+                    lower_boliinger = count_below_lower_band >= bol_touch_time and decreasing and upper_candle
                                     
                     stoch_Rsi = stoch_rsi(ticker, interval = minute)
                     srsi_k = stoch_Rsi['%K'].values
