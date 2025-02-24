@@ -17,7 +17,7 @@ upbit = pyupbit.Upbit(os.getenv("UPBIT_ACCESS"), os.getenv("UPBIT_SECRET"))
 count_200 = 200
 
 minute = "minute15"
-# minute5 = "minute5"
+minute5 = "minute5"
 
 second=1.0
 
@@ -318,8 +318,8 @@ def trade_sell(ticker):
     profit_rate = (cur_price - avg_buy_price) / avg_buy_price * 100 if avg_buy_price > 0 else 0  # 수익률 계산
     holding_value = buyed_amount * cur_price if cur_price is not None else 0
 
-    last_ema = get_ema(ticker, interval = minute).iloc[1]
-    pre_ema = get_ema(ticker, interval = minute).iloc[0]
+    # last_ema = get_ema(ticker, interval = minute).iloc[1]
+    # pre_ema = get_ema(ticker, interval = minute).iloc[0]
 
     bands_df = get_bollinger_bands(ticker, interval = minute)
     # upper_band = bands_df['Upper_Band'].values
@@ -327,7 +327,7 @@ def trade_sell(ticker):
     # band_diff = upper_band - lower_band
     # is_increasing = all(band_diff[i] < band_diff[i + 1] for i in range(len(band_diff) - 1))
     
-    stoch_Rsi = stoch_rsi(ticker, interval = minute)
+    stoch_Rsi = stoch_rsi(ticker, interval = minute5)
     srsi = stoch_Rsi['%K'].values
 
     # bands_df = get_bollinger_bands(ticker, interval = minute)
@@ -344,9 +344,9 @@ def trade_sell(ticker):
     upper_boliinger = count_upper_band >= bol_upper_time
     cut_boliinger = cut_upper_band >= bol_upper_time
 
-    upper_price = profit_rate >= min_rate and pre_ema < last_ema and upper_boliinger
-    middle_price = profit_rate >= min_rate and cur_price > last_ema and srsi_sell
-    cut_price = profit_rate < cut_rate or (pre_ema < last_ema and cut_boliinger) 
+    upper_price = profit_rate >= min_rate and upper_boliinger
+    middle_price = profit_rate >= min_rate and srsi_sell
+    cut_price = profit_rate < cut_rate or cut_boliinger
 
     max_attempts = sell_time
     attempts = 0
