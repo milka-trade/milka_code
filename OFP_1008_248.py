@@ -1245,12 +1245,6 @@ profit_report_running = False
 def send_profit_report():
     """
     효율화된 수익률 보고서 - 매시간 정시 실행
-    
-    개선사항:
-    1. 코드 길이 50% 단축 (150줄 → 75줄)
-    2. 출력 형식 변경: 코인명 | 수익률 | 평가금액 | 순수익금액
-    3. 불필요한 재시도 로직 제거 (한 번 실패 시 스킵)
-    4. 간결한 에러 처리
     """
     global profit_report_running
     
@@ -1261,17 +1255,26 @@ def send_profit_report():
     
     try:
         while True:
+            # 1. 정시를 기다리는 초기 대기 로직 (첫 실행 시 정시가 아닐 경우)
+            now = datetime.now()
+            
+            # 현재 시각이 정시가 아니면 (예: 12:15) → 다음 정시(13:00)까지 대기
+            if now.minute != 0 or now.second > 5: # 정시에 실행될 때 약간의 오차 허용
+                # 다음 정시 계산
+                next_run = (now + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+                wait_seconds = (next_run - now).total_seconds()
+                
+                # 30초 여유는 불필요함. 정확히 대기 후 바로 실행
+                if wait_seconds > 0:
+                    # print(f"현재 {now.strftime('%H:%M:%S')}. 다음 실행까지 {wait_seconds:.0f}초 대기...")
+                    time.sleep(wait_seconds)
+                
+                # 대기 후 루프를 다시 시작하여 정시임을 확인하고 실행
+                now = datetime.now() # 새로운 now 업데이트
+                
+            
+            # --- 보고서 생성/전송 로직 (이제 now는 정시에 매우 가까움) ---
             try:
-                now = datetime.now()
-                
-                # 정시까지 대기
-                if now.minute != 0:
-                    next_hour = (now + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
-                    wait_seconds = (next_hour - now).total_seconds()
-                    if wait_seconds > 60:
-                        time.sleep(wait_seconds - 30)
-                        continue
-                
                 # 잔고 조회
                 balances = upbit.get_balances()
                 if not balances:
@@ -1330,7 +1333,7 @@ def send_profit_report():
                 holdings.sort(key=lambda x: x['value'], reverse=True)
                 
                 # 보고서 생성
-                msg = f"[{now.strftime('%m/%d %H시')} 정시 보고서]\n"
+                msg = f"[{now.strftime('%m/%d %H시')} 정시 보고서]\n" # now는 이미 정시!
                 msg += "━━━━━━━━━━━━━━━━━━━━\n"
                 msg += f"총자산: {total_value:,.0f}원\n"
                 msg += f"KRW: {krw_balance:,.0f}원 | 암호화폐: {crypto_value:,.0f}원\n\n"
@@ -1353,17 +1356,23 @@ def send_profit_report():
                 send_discord_message(msg)
                 print(f"[{now.strftime('%H시')}] 보고서 전송 완료 (총자산: {total_value:,.0f}원)")
                 
-                time.sleep(3600)
+                # 2. 다음 정시까지 대기하는 로직 (핵심 수정)
+                # 보고서 전송 후 다음 정시까지 남은 시간 계산 (약 1시간에서 전송 시간을 뺀 값)
+                next_hour = (now + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+                wait_duration = (next_hour - datetime.now()).total_seconds()
+                
+                if wait_duration > 0:
+                    time.sleep(wait_duration)
                 
             except Exception as e:
                 error_msg = f"수익률 보고서 오류\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n{str(e)}"
                 print(error_msg)
-                send_discord_message(error_msg)
-                time.sleep(300)
+                # send_discord_message(error_msg) # 에러 메시지는 반복 전송하지 않도록 주석 처리 권장
+                time.sleep(300) # 5분 후 재시도
     
     finally:
         profit_report_running = False
-
+        
 def selling_logic():
     """매도 로직 - 보유 코인 매도 처리"""
     try:
