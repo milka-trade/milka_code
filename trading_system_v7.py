@@ -160,7 +160,7 @@ class KiwoomAPI:
         self.tr_data = {}
         ret = self.ocx.dynamicCall(
             "CommRqData(QString, QString, int, QString)",
-            rq_name, tr_code, prev_next, screen_no
+            [rq_name, tr_code, prev_next, screen_no]  # 리스트 권장
         )
         if ret == 0:
             self.tr_loop.exec_()
@@ -290,7 +290,7 @@ class KiwoomAPI:
     def set_real_reg(self, screen_no, code_list, fid_list, opt_type="0"):
         ret = self.ocx.dynamicCall(
             "SetRealReg(QString, QString, QString, QString)",
-            screen_no, code_list, fid_list, opt_type
+            [screen_no, code_list, fid_list, opt_type]  # 리스트 권장
         )
         logger_api.info(f"실시간 등록: {code_list} -> {ret}")
         return ret
@@ -324,16 +324,11 @@ class KiwoomAPI:
 
     # ── 주문 ──────────────────────────────────────────────────────
     def send_order(self, rq_name, screen_no, acc_no, order_type,
-                   code, qty, price, hoga_type, org_order_no=""):
-        """
-        order_type: 1=신규매수, 2=신규매도
-        hoga_type: 00=지정가, 03=시장가
-        """
+               code, qty, price, hoga_type, org_order_no=""):
         ret = self.ocx.dynamicCall(
-            "SendOrder(QString, QString, QString, int, QString, "
-            "int, int, QString, QString)",
-            rq_name, screen_no, acc_no, order_type, code,
-            qty, price, hoga_type, org_order_no
+            "SendOrder(QString, QString, QString, int, QString, int, int, QString, QString)",
+            [rq_name, screen_no, acc_no, order_type, code,
+            qty, price, hoga_type, org_order_no]   # ← 리스트로 묶기
         )
         action = "매수" if order_type == 1 else "매도"
         if ret == 0:
